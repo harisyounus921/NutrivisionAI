@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(flutter devices *)",
+      "Bash(flutter --version)",
+      "Bash(python3 -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Bash(python3 -c \"import cairosvg; print\\('cairosvg ok'\\)\")",
+      "Bash(python3 -c \"import numpy; print\\('numpy', numpy.__version__\\)\")",
+      "Bash(curl -sI https://pub.dev --max-time 5)",
+      "Bash(time python3 /tmp/gen_icon.py)",
+      "Bash(python3 /tmp/check_icon.py)",
+      "Bash(python3 /tmp/gen_icon.py)",
+      "Bash(dart run *)"
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+
+import '../models/achievement.dart';
+
+/// Local seed list of badges (UC-10). Progress and unlock state are computed
+/// on the fly from meal logs, activity logs, and the user's profile —
+/// see [AchievementService].
+const List<Achievement> achievementDatabase = [
+  Achievement(
+    id: 'first_log',
+    title: 'First Bite',
+    description: 'Log your first meal',
+    icon: Icons.restaurant,
+    type: AchievementType.mealCount,
+    target: 1,
+  ),
+  Achievement(
+    id: 'meals_10',
+    title: 'Getting Started',
+    description: 'Log 10 meals',
+    icon: Icons.restaurant_menu,
+    type: AchievementType.mealCount,
+    target: 10,
+  ),
+  Achievement(
+    id: 'meals_50',
+    title: 'Logging Pro',
+    description: 'Log 50 meals',
+    icon: Icons.menu_book,
+    type: AchievementType.mealCount,
+    target: 50,
+  ),
+  Achievement(
+    id: 'streak_3',
+    title: '3-Day Streak',
+    description: 'Log meals 3 days in a row',
+    icon: Icons.local_fire_department,
+    type: AchievementType.streak,
+    target: 3,
+  ),
+  Achievement(
+    id: 'streak_7',
+    title: 'Week Warrior',
+    description: 'Log meals 7 days in a row',
+    icon: Icons.local_fire_department,
+    type: AchievementType.streak,
+    target: 7,
+  ),
+  Achievement(
+    id: 'streak_30',
+    title: 'Habit Formed',
+    description: 'Log meals 30 days in a row',
+    icon: Icons.emoji_events,
+    type: AchievementType.streak,
+    target: 30,
+  ),
+  Achievement(
+    id: 'goal_hit_1',
+    title: 'On Target',
+    description: 'Hit your daily calorie goal (within 10%)',
+    icon: Icons.track_changes,
+    type: AchievementType.goalHit,
+    target: 1,
+  ),
+  Achievement(
+    id: 'goal_hit_5',
+    title: 'Consistency Champ',
+    description: 'Hit your daily calorie goal 5 times',
+    icon: Icons.military_tech,
+    type: AchievementType.goalHit,
+    target: 5,
+  ),
+  Achievement(
+    id: 'activity_1',
+    title: 'Active Start',
+    description: 'Log your first activity',
+    icon: Icons.directions_run,
+    type: AchievementType.activityCount,
+    target: 1,
+  ),
+  Achievement(
+    id: 'activity_10',
+    title: 'Mover & Shaker',
+    description: 'Log 10 activities',
+    icon: Icons.fitness_center,
+    type: AchievementType.activityCount,
+    target: 10,
+  ),
+];
