@@ -1,69 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_page_route.dart';
-import '../../../core/navigation/post_auth_navigation.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../food/providers/meal_log_provider.dart';
-import '../../profile/providers/profile_provider.dart';
-import '../providers/auth_provider.dart';
-import 'forgot_password_screen.dart';
-import 'register_screen.dart';
+import '../../../core/services/api_client.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  const ResetPasswordScreen({super.key, required this.email});
+
+  final String email;
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _tokenController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _authService = AuthService();
+  bool _isLoading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _tokenController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
     try {
-      await context.read<AuthProvider>().login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      await _authService.resetPassword(
+        token: _tokenController.text.trim(),
+        newPassword: _passwordController.text,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
       );
+      setState(() => _isLoading = false);
       return;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
 
     if (!mounted) return;
-    await context.read<ProfileProvider>().loadProfile();
-
-    if (!mounted) return;
-    await context.read<MealLogProvider>().loadLogs();
-
-    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Password reset! Please log in.')),
+    );
     Navigator.of(context).pushAndRemoveUntil(
-      AppPageRoute(builder: postAuthDestination),
+      AppPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthProvider>().isLoading;
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -74,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 48, 24, 36),
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 36),
                 decoration: const BoxDecoration(
                   gradient: AppTheme.heroGradient,
                   borderRadius: BorderRadius.only(
@@ -84,23 +83,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: Column(
                   children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        ),
+                      ],
+                    ),
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.eco_rounded, size: 48, color: Colors.white),
+                      child: const Icon(Icons.verified_outlined, size: 48, color: Colors.white),
                     ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
                     const SizedBox(height: 16),
                     Text(
-                      'Nutrivision AI',
+                      'Enter Reset Code',
                       style: textTheme.headlineMedium?.copyWith(color: Colors.white),
                       textAlign: TextAlign.center,
                     ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 6),
                     Text(
-                      'Welcome back — let\'s keep your streak going',
+                      'Check ${widget.email} for a 6-digit code',
                       style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
                       textAlign: TextAlign.center,
                     ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
@@ -115,81 +122,48 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                        controller: _tokenController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
                         decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
+                          labelText: '6-digit code',
+                          prefixIcon: Icon(Icons.pin_outlined),
+                          counterText: '',
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Enter your email';
-                          }
-                          if (!value.contains('@')) return 'Enter a valid email';
+                        validator: (v) {
+                          if (v == null || v.trim().length != 6) return 'Enter the 6-digit code';
                           return null;
                         },
                       ).animate().fadeIn(delay: 100.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        obscureText: _obscurePassword,
+                        obscureText: _obscure,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: 'New Password',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
-                            },
+                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                            onPressed: () => setState(() => _obscure = !_obscure),
                           ),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Enter your password';
-                          if (value.length < 6) return 'Password must be at least 6 characters';
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Enter a new password';
+                          if (v.length < 8) return 'Password must be at least 8 characters';
                           return null;
                         },
                       ).animate().fadeIn(delay: 175.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).push(
-                            AppPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                          ),
-                          child: const Text('Forgot password?'),
-                        ),
-                      ).animate().fadeIn(delay: 225.ms, duration: 350.ms),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 28),
                       FilledButton(
-                        onPressed: isLoading ? null : _submit,
-                        child: isLoading
+                        onPressed: _isLoading ? null : _submit,
+                        child: _isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('Log In'),
+                            : const Text('Reset Password'),
                       ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.1, end: 0),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Don't have an account?", style: textTheme.bodyMedium),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                AppPageRoute(builder: (_) => const RegisterScreen()),
-                              );
-                            },
-                            child: Text(
-                              'Sign Up',
-                              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
-                      ).animate().fadeIn(delay: 325.ms, duration: 350.ms),
                     ],
                   ),
                 ),

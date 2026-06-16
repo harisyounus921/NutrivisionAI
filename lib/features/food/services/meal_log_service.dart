@@ -1,30 +1,42 @@
-import 'dart:convert';
-
-import 'package:shared_preferences/shared_preferences.dart';
-
+import '../../../core/services/api_client.dart';
 import '../models/meal_log.dart';
 
 class MealLogService {
-  static const _keyMealLogs = 'meal_logs';
+  MealLogService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
+  final ApiClient _api;
+
+  /// Loads meal logs for the last 8 days (covers today + 7-day trend).
   Future<List<MealLog>> loadLogs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getStringList(_keyMealLogs);
-    if (stored == null) return [];
+    final from = DateTime.now().subtract(const Duration(days: 7));
+    final fromStr = DateTime(from.year, from.month, from.day).toIso8601String();
 
-    return stored
-        .map((entry) => MealLog.fromJson(jsonDecode(entry) as Map<String, dynamic>))
+    final data = await _api.get('/meals', query: {'from': fromStr});
+    if (data == null) return [];
+
+    return (data as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .map(MealLog.fromApiJson)
         .toList();
   }
 
-  Future<void> saveLogs(List<MealLog> logs) async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = logs.map((log) => jsonEncode(log.toJson())).toList();
-    await prefs.setStringList(_keyMealLogs, encoded);
+  /// Posts a new meal to the backend and returns the persisted log.
+  Future<MealLog> addLog(MealLog log, {String? foodItemId}) async {
+    final data = await _api.post(
+      '/meals',
+      body: log.toApiCreateBody(foodItemId: foodItemId),
+    ) as Map<String, dynamic>;
+
+    // Response is { mealLog: {...}, gamification: {...} }
+    final mealLogJson = data['mealLog'] as Map<String, dynamic>? ?? data;
+    return MealLog.fromApiJson(mealLogJson);
+  }
+
+  Future<void> deleteLog(String id) async {
+    await _api.delete('/meals/$id');
   }
 
   Future<void> clearLogs() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyMealLogs);
+    // Bulk clear is handled by DELETE /settings/account; no-op here.
   }
 }

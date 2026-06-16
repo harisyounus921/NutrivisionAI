@@ -8,6 +8,8 @@ import 'features/coach/providers/chat_provider.dart';
 import 'features/food/providers/meal_log_provider.dart';
 import 'features/health/providers/activity_log_provider.dart';
 import 'features/profile/providers/profile_provider.dart';
+import 'features/dashboard/providers/dashboard_provider.dart';
+import 'features/gamification/providers/gamification_provider.dart';
 import 'features/settings/providers/settings_provider.dart';
 
 void main() {
@@ -27,6 +29,8 @@ class NutrivisionApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => ActivityLogProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => GamificationProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: true,

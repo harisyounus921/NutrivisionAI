@@ -1,7 +1,7 @@
 name: ai_diet
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.5
@@ -11,6 +11,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
+  http: ^1.2.0
+  mobile_scanner: ^6.0.0
+  image_picker: ^1.1.2
   fl_chart: ^1.2.0
   google_fonts: ^8.1.0
   flutter_animate: ^4.5.2

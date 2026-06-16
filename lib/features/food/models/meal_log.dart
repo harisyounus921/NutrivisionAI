@@ -8,6 +8,20 @@ extension MealSourceLabel on MealSource {
       };
 }
 
+MealSource _sourceFromApi(String v) => switch (v) {
+      'photo' => MealSource.photo,
+      'barcode' => MealSource.barcode,
+      _ => MealSource.manual,
+    };
+
+String _inferMealType() {
+  final hour = DateTime.now().hour;
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 20) return 'dinner';
+  return 'snack';
+}
+
 /// A single logged meal entry, with totals already scaled by [servings].
 class MealLog {
   const MealLog({
@@ -34,6 +48,39 @@ class MealLog {
   final DateTime loggedAt;
   final MealSource source;
 
+  /// Build the API POST body for logging this meal.
+  Map<String, dynamic> toApiCreateBody({String? foodItemId}) => {
+        'foodItemId': ?foodItemId,
+        'name': foodName,
+        'mealType': _inferMealType(),
+        'quantity': servings,
+        'servingUnit': 'serving',
+        'calories': calories,
+        'protein': proteinG,
+        'carbs': carbsG,
+        'fat': fatG,
+        'source': source.name,
+        'loggedAt': loggedAt.toIso8601String(),
+      };
+
+  factory MealLog.fromApiJson(Map<String, dynamic> json) {
+    final quantity = (json['quantity'] as num? ?? 1).toDouble();
+    final unit = json['servingUnit'] as String? ?? 'serving';
+    return MealLog(
+      id: json['id'] as String,
+      foodName: json['name'] as String,
+      servingDescription: '${quantity.toStringAsFixed(quantity == quantity.roundToDouble() ? 0 : 1)} $unit',
+      servings: quantity,
+      calories: (json['calories'] as num? ?? 0).toDouble(),
+      proteinG: (json['protein'] as num? ?? 0).toDouble(),
+      carbsG: (json['carbs'] as num? ?? 0).toDouble(),
+      fatG: (json['fat'] as num? ?? 0).toDouble(),
+      loggedAt: DateTime.parse(json['loggedAt'] as String),
+      source: _sourceFromApi(json['source'] as String? ?? 'manual'),
+    );
+  }
+
+  // Keep for backward compat with existing local data / tests.
   Map<String, dynamic> toJson() => {
         'id': id,
         'foodName': foodName,

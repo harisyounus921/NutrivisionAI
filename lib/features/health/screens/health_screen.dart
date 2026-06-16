@@ -8,6 +8,7 @@ import '../../food/providers/meal_log_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/activity_log.dart';
 import '../providers/activity_log_provider.dart';
+import '../services/health_api_service.dart';
 import 'log_activity_screen.dart';
 
 /// Health tab: net calorie balance (consumed vs. burned), today's steps,
@@ -20,12 +21,23 @@ class HealthScreen extends StatefulWidget {
 }
 
 class _HealthScreenState extends State<HealthScreen> {
+  final _healthApiService = HealthApiService();
+  List<HealthSummaryDay> _serverSummary = [];
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ActivityLogProvider>().loadLogs();
+      _loadServerSummary();
     });
+  }
+
+  Future<void> _loadServerSummary() async {
+    try {
+      final summary = await _healthApiService.getSummary();
+      if (mounted) setState(() => _serverSummary = summary);
+    } catch (_) {}
   }
 
   void _showComingSoon(BuildContext context, String feature) {
@@ -63,10 +75,16 @@ class _HealthScreenState extends State<HealthScreen> {
                 .fadeIn(delay: 100.ms, duration: 350.ms)
                 .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 16),
+            if (_serverSummary.isNotEmpty)
+              _HealthSummaryCard(days: _serverSummary)
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 350.ms)
+                  .slideY(begin: 0.06, end: 0),
+            if (_serverSummary.isNotEmpty) const SizedBox(height: 16),
             _SyncCard(
               onSyncGoogleFit: () => _showComingSoon(context, 'Google Fit sync'),
               onSyncAppleHealth: () => _showComingSoon(context, 'Apple Health sync'),
-            ).animate().fadeIn(delay: 200.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
+            ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -94,6 +112,7 @@ class _HealthScreenState extends State<HealthScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_log_activity',
         onPressed: () {
           Navigator.of(context).push(
             AppPageRoute(builder: (_) => const LogActivityScreen()),
@@ -356,6 +375,148 @@ class _ActivityCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HealthSummaryCard extends StatelessWidget {
+  const _HealthSummaryCard({required this.days});
+
+  final List<HealthSummaryDay> days;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: colorScheme.primaryContainer,
+                  child: Icon(Icons.insights_outlined, size: 18, color: colorScheme.onPrimaryContainer),
+                ),
+                const SizedBox(width: 12),
+                Text('7-Day Health Summary', style: textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: days.map((d) {
+                final hasData = d.caloriesBurned > 0 || d.steps > 0;
+                return Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: hasData
+                              ? colorScheme.secondaryContainer
+                              : colorScheme.surfaceContainerHighest,
+                        ),
+                        child: hasData
+                            ? Icon(Icons.check, size: 14, color: colorScheme.onSecondaryContainer)
+                            : null,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _dayLabel(d.date),
+                        style: textTheme.bodySmall?.copyWith(fontSize: 10, color: colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _HealthStat(
+                  icon: Icons.local_fire_department_outlined,
+                  color: AppTheme.accent,
+                  label: 'Avg burned',
+                  value: _avgBurned(),
+                ),
+                _HealthStat(
+                  icon: Icons.directions_walk,
+                  color: colorScheme.primary,
+                  label: 'Avg steps',
+                  value: _avgSteps(),
+                ),
+                _HealthStat(
+                  icon: Icons.timer_outlined,
+                  color: AppTheme.secondary,
+                  label: 'Avg active',
+                  value: _avgActive(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _dayLabel(DateTime d) {
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return labels[d.weekday - 1];
+  }
+
+  String _avgBurned() {
+    if (days.isEmpty) return '0 kcal';
+    final active = days.where((d) => d.caloriesBurned > 0).toList();
+    if (active.isEmpty) return '0 kcal';
+    final avg = active.map((d) => d.caloriesBurned).reduce((a, b) => a + b) / active.length;
+    return '${avg.toStringAsFixed(0)} kcal';
+  }
+
+  String _avgSteps() {
+    if (days.isEmpty) return '0';
+    final active = days.where((d) => d.steps > 0).toList();
+    if (active.isEmpty) return '0';
+    final avg = active.map((d) => d.steps).reduce((a, b) => a + b) / active.length;
+    return avg.toStringAsFixed(0);
+  }
+
+  String _avgActive() {
+    if (days.isEmpty) return '0 min';
+    final active = days.where((d) => d.activeMinutes > 0).toList();
+    if (active.isEmpty) return '0 min';
+    final avg = active.map((d) => d.activeMinutes).reduce((a, b) => a + b) / active.length;
+    return '${avg.toStringAsFixed(0)} min';
+  }
+}
+
+class _HealthStat extends StatelessWidget {
+  const _HealthStat({required this.icon, required this.color, required this.label, required this.value});
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(value, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text(label, style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+      ],
     );
   }
 }

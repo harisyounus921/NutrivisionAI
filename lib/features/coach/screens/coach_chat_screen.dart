@@ -8,6 +8,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../models/chat_message.dart';
 import '../providers/chat_provider.dart';
 import '../services/coach_response_service.dart';
+import 'conversations_screen.dart';
 
 /// AI Coach chat tab: ask dietary questions, receive guidance grounded in
 /// the user's profile and today's logged nutrition (FR-11, UC-08).
@@ -85,6 +86,15 @@ class _CoachChatScreenState extends State<CoachChatScreen> {
             const Text('AI Coach'),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Past conversations',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ConversationsScreen()),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(

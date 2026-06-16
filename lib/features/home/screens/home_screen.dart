@@ -177,6 +177,7 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_log_meal',
         onPressed: () {
           Navigator.of(context).push(
             AppPageRoute(builder: (_) => const LogMealScreen()),

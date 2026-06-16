@@ -13,7 +13,11 @@
       "Bash(time python3 /tmp/gen_icon.py)",
       "Bash(python3 /tmp/check_icon.py)",
       "Bash(python3 /tmp/gen_icon.py)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "WebFetch(domain:ai-diet-backend-y5ks.onrender.com)",
+      "Bash(curl -s \"https://ai-diet-backend-y5ks.onrender.com/api/docs/\")",
+      "Bash(curl -s \"https://ai-diet-backend-y5ks.onrender.com/api/docs/swagger-ui-init.js\")",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

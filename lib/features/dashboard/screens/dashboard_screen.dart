@@ -4,37 +4,67 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../food/providers/meal_log_provider.dart';
-import '../../profile/providers/profile_provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../services/dashboard_service.dart';
 
 const _weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<DashboardProvider>().load();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final profile = context.watch<ProfileProvider>().profile;
-    final mealLogProvider = context.watch<MealLogProvider>();
-    final goal = profile?.dailyCalorieGoal;
+    final provider = context.watch<DashboardProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          if (provider.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => context.read<DashboardProvider>().load(),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _CaloriesCard(consumed: mealLogProvider.todayCalories, goal: goal)
+            _CaloriesCard(daily: provider.daily)
                 .animate()
                 .fadeIn(duration: 350.ms)
                 .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 16),
-            _MacroBreakdownCard(mealLogProvider: mealLogProvider)
+            _MacroBreakdownCard(daily: provider.daily)
                 .animate()
                 .fadeIn(delay: 100.ms, duration: 350.ms)
                 .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 16),
-            _WeeklyTrendCard(mealLogProvider: mealLogProvider, goal: goal)
+            _WeeklyTrendCard(range: provider.range, goalCalories: provider.daily?.calorieGoal)
                 .animate()
                 .fadeIn(delay: 200.ms, duration: 350.ms)
                 .slideY(begin: 0.06, end: 0),
@@ -69,16 +99,18 @@ class _CardHeader extends StatelessWidget {
 }
 
 class _CaloriesCard extends StatelessWidget {
-  const _CaloriesCard({required this.consumed, required this.goal});
+  const _CaloriesCard({required this.daily});
 
-  final double consumed;
-  final int? goal;
+  final DailyData? daily;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final progress = (goal == null || goal == 0) ? 0.0 : (consumed / goal!).clamp(0.0, 1.0);
-    final remaining = goal == null ? null : goal! - consumed;
+    final consumed = daily?.calories ?? 0;
+    final goal = daily?.calorieGoal;
+    final burned = daily?.caloriesBurned ?? 0;
+    final progress = (goal == null || goal == 0) ? 0.0 : (consumed / goal).clamp(0.0, 1.0);
+    final remaining = goal == null ? null : goal - consumed;
     final isOver = remaining != null && remaining < 0;
     final barColor = isOver ? colorScheme.error : colorScheme.primary;
 
@@ -113,15 +145,24 @@ class _CaloriesCard extends StatelessWidget {
               goal == null
                   ? '${consumed.toStringAsFixed(0)} kcal consumed'
                   : remaining! >= 0
-                      ? '${consumed.toStringAsFixed(0)} / $goal kcal '
+                      ? '${consumed.toStringAsFixed(0)} / ${goal.toStringAsFixed(0)} kcal '
                           '(${remaining.toStringAsFixed(0)} remaining)'
-                      : '${consumed.toStringAsFixed(0)} / $goal kcal '
+                      : '${consumed.toStringAsFixed(0)} / ${goal.toStringAsFixed(0)} kcal '
                           '(${(-remaining).toStringAsFixed(0)} over)',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: isOver ? colorScheme.error : colorScheme.onSurfaceVariant,
                     fontWeight: isOver ? FontWeight.w700 : FontWeight.w400,
                   ),
             ),
+            if (burned > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Burned: ${burned.toStringAsFixed(0)} kcal  •  Net: ${(consumed - burned).toStringAsFixed(0)} kcal',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
           ],
         ),
       ),
@@ -130,15 +171,22 @@ class _CaloriesCard extends StatelessWidget {
 }
 
 class _MacroBreakdownCard extends StatelessWidget {
-  const _MacroBreakdownCard({required this.mealLogProvider});
+  const _MacroBreakdownCard({required this.daily});
 
-  final MealLogProvider mealLogProvider;
+  final DailyData? daily;
 
   @override
   Widget build(BuildContext context) {
-    final proteinCals = mealLogProvider.todayProtein * 4;
-    final carbsCals = mealLogProvider.todayCarbs * 4;
-    final fatCals = mealLogProvider.todayFat * 9;
+    final protein = daily?.protein ?? 0;
+    final carbs = daily?.carbs ?? 0;
+    final fat = daily?.fat ?? 0;
+    final proteinGoal = daily?.proteinGoal;
+    final carbsGoal = daily?.carbsGoal;
+    final fatGoal = daily?.fatGoal;
+
+    final proteinCals = protein * 4;
+    final carbsCals = carbs * 4;
+    final fatCals = fat * 9;
     final total = proteinCals + carbsCals + fatCals;
 
     return Card(
@@ -201,21 +249,9 @@ class _MacroBreakdownCard extends StatelessWidget {
                     curve: Curves.easeOutBack,
                   ),
               const SizedBox(height: 12),
-              _LegendRow(
-                color: AppTheme.proteinColor,
-                label: 'Protein',
-                value: '${mealLogProvider.todayProtein.toStringAsFixed(1)} g',
-              ),
-              _LegendRow(
-                color: AppTheme.carbsColor,
-                label: 'Carbs',
-                value: '${mealLogProvider.todayCarbs.toStringAsFixed(1)} g',
-              ),
-              _LegendRow(
-                color: AppTheme.fatColor,
-                label: 'Fat',
-                value: '${mealLogProvider.todayFat.toStringAsFixed(1)} g',
-              ),
+              _MacroRow(color: AppTheme.proteinColor, label: 'Protein', value: protein, goal: proteinGoal),
+              _MacroRow(color: AppTheme.carbsColor, label: 'Carbs', value: carbs, goal: carbsGoal),
+              _MacroRow(color: AppTheme.fatColor, label: 'Fat', value: fat, goal: fatGoal),
             ],
           ],
         ),
@@ -224,15 +260,19 @@ class _MacroBreakdownCard extends StatelessWidget {
   }
 }
 
-class _LegendRow extends StatelessWidget {
-  const _LegendRow({required this.color, required this.label, required this.value});
+class _MacroRow extends StatelessWidget {
+  const _MacroRow({required this.color, required this.label, required this.value, this.goal});
 
   final Color color;
   final String label;
-  final String value;
+  final double value;
+  final double? goal;
 
   @override
   Widget build(BuildContext context) {
+    final text = goal != null
+        ? '${value.toStringAsFixed(1)} / ${goal!.toStringAsFixed(0)} g'
+        : '${value.toStringAsFixed(1)} g';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -240,7 +280,7 @@ class _LegendRow extends StatelessWidget {
           Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 8),
           Expanded(child: Text(label)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(text, style: const TextStyle(fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -248,17 +288,46 @@ class _LegendRow extends StatelessWidget {
 }
 
 class _WeeklyTrendCard extends StatelessWidget {
-  const _WeeklyTrendCard({required this.mealLogProvider, required this.goal});
+  const _WeeklyTrendCard({required this.range, this.goalCalories});
 
-  final MealLogProvider mealLogProvider;
-  final int? goal;
+  final List<RangeDayData> range;
+  final double? goalCalories;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final days = mealLogProvider.last7DaysCalories;
-    final maxCalories = days.fold<double>(0, (max, day) => day.$2 > max ? day.$2 : max);
-    final maxY = [maxCalories, (goal ?? 0).toDouble(), 100.0].reduce((a, b) => a > b ? a : b) * 1.15;
+
+    if (range.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _CardHeader(
+                icon: Icons.bar_chart_rounded,
+                color: AppTheme.secondary,
+                title: 'Last 7 Days',
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: Text(
+                  'No data yet — start logging meals!',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final maxCalories = range.fold<double>(0, (m, d) => d.calories > m ? d.calories : m);
+    final maxY = [maxCalories, goalCalories ?? 0, 100.0].reduce((a, b) => a > b ? a : b) * 1.15;
+    final today = DateTime.now();
 
     return Card(
       child: Padding(
@@ -288,13 +357,14 @@ class _WeeklyTrendCard extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index < 0 || index >= days.length) return const SizedBox.shrink();
-                          final isToday = index == days.length - 1;
+                          final i = value.toInt();
+                          if (i < 0 || i >= range.length) return const SizedBox.shrink();
+                          final d = range[i].date;
+                          final isToday = d.year == today.year && d.month == today.month && d.day == today.day;
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              isToday ? 'Today' : _weekdayLabels[days[index].$1.weekday - 1],
+                              isToday ? 'Today' : _weekdayLabels[d.weekday - 1],
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     fontWeight: isToday ? FontWeight.w700 : FontWeight.w400,
                                     color: isToday ? colorScheme.primary : colorScheme.onSurfaceVariant,
@@ -305,12 +375,12 @@ class _WeeklyTrendCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  extraLinesData: goal == null
+                  extraLinesData: goalCalories == null
                       ? null
                       : ExtraLinesData(
                           horizontalLines: [
                             HorizontalLine(
-                              y: goal!.toDouble(),
+                              y: goalCalories!,
                               color: AppTheme.accent,
                               strokeWidth: 2,
                               dashArray: [6, 4],
@@ -318,16 +388,16 @@ class _WeeklyTrendCard extends StatelessWidget {
                           ],
                         ),
                   barGroups: [
-                    for (var i = 0; i < days.length; i++)
+                    for (var i = 0; i < range.length; i++)
                       BarChartGroupData(
                         x: i,
                         barRods: [
                           BarChartRodData(
-                            toY: days[i].$2,
+                            toY: range[i].calories,
                             gradient: LinearGradient(
                               begin: Alignment.bottomCenter,
                               end: Alignment.topCenter,
-                              colors: i == days.length - 1
+                              colors: range[i].date.day == today.day
                                   ? [AppTheme.secondary, AppTheme.seed]
                                   : [
                                       colorScheme.primary.withValues(alpha: 0.55),
@@ -343,7 +413,7 @@ class _WeeklyTrendCard extends StatelessWidget {
                 ),
               ),
             ).animate().fadeIn(delay: 150.ms, duration: 400.ms),
-            if (goal != null) ...[
+            if (goalCalories != null) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -351,7 +421,9 @@ class _WeeklyTrendCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Daily goal',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                   ),
                 ],
               ),

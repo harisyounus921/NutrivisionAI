@@ -3,16 +3,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/widgets/log_option_card.dart';
+import 'barcode_scan_screen.dart';
 import 'food_search_screen.dart';
+import 'photo_recognize_screen.dart';
 
 class LogMealScreen extends StatelessWidget {
   const LogMealScreen({super.key});
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature is coming soon')),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +46,11 @@ class LogMealScreen extends StatelessWidget {
                 title: 'Scan Barcode',
                 subtitle: 'Scan a packaged food barcode',
                 animationDelay: 100.ms,
-                onTap: () => _showComingSoon(context, 'Barcode scanning'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    AppPageRoute(builder: (_) => const BarcodeScanScreen()),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               LogOptionCard(
@@ -59,7 +59,11 @@ class LogMealScreen extends StatelessWidget {
                 title: 'Take Photo',
                 subtitle: 'Recognize food from a photo',
                 animationDelay: 150.ms,
-                onTap: () => _showComingSoon(context, 'Photo recognition'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    AppPageRoute(builder: (_) => const PhotoRecognizeScreen()),
+                  );
+                },
               ),
             ],
           ),

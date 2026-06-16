@@ -1,20 +1,23 @@
+import 'dart:developer' as dev;
+
 import 'package:flutter/foundation.dart';
 
+import '../../../core/services/api_client.dart';
 import '../../../core/services/session_service.dart';
 import '../models/app_user.dart';
+import '../services/auth_service.dart';
+
+export '../../../core/services/api_client.dart' show ApiException;
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
-/// Holds auth state and session persistence (via [SessionService]).
-///
-/// Login/registration currently succeed locally without a backend call —
-/// this will be replaced once the backend (Firebase or custom REST API) is
-/// chosen, without changing the public API used by the UI.
 class AuthProvider extends ChangeNotifier {
-  AuthProvider({SessionService? sessionService})
-      : _sessionService = sessionService ?? SessionService();
+  AuthProvider({SessionService? sessionService, AuthService? authService})
+      : _session = sessionService ?? SessionService(),
+        _authService = authService ?? AuthService();
 
-  final SessionService _sessionService;
+  final SessionService _session;
+  final AuthService _authService;
 
   AuthStatus _status = AuthStatus.unknown;
   AppUser? _user;
@@ -25,26 +28,49 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> tryAutoLogin() async {
-    final loggedIn = await _sessionService.isLoggedIn();
-    if (loggedIn) {
-      final name = await _sessionService.getUserName() ?? '';
-      final email = await _sessionService.getUserEmail() ?? '';
-      _user = AppUser(name: name, email: email);
+    _d('tryAutoLogin — checking stored session');
+    final loggedIn = await _session.isLoggedIn();
+    if (!loggedIn) {
+      _d('tryAutoLogin — no session found, going to login screen');
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return;
+    }
+
+    _d('tryAutoLogin — session found, calling GET /auth/me');
+    try {
+      _user = await _authService.getMe();
+      _d('tryAutoLogin — success, user: ${_user?.email}');
       _status = AuthStatus.authenticated;
-    } else {
+    } on ApiException catch (e) {
+      _d('tryAutoLogin — auth error: ${e.message} — clearing session');
+      await _session.clearSession();
+      _status = AuthStatus.unauthenticated;
+    } catch (e) {
+      _d('tryAutoLogin — network/unexpected error: $e — keeping session');
       _status = AuthStatus.unauthenticated;
     }
     notifyListeners();
   }
 
   Future<void> login({required String email, required String password}) async {
+    _d('login — POST /auth/login for $email');
     _setLoading(true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    final name = email.split('@').first;
-    await _sessionService.saveSession(name: name, email: email);
-    _user = AppUser(name: name, email: email);
-    _status = AuthStatus.authenticated;
-    _setLoading(false);
+    try {
+      final result = await _authService.login(email: email, password: password);
+      await _session.saveSession(
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        userId: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+      );
+      _user = result.user;
+      _status = AuthStatus.authenticated;
+      _d('login — success, userId: ${result.user.id}');
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> register({
@@ -52,19 +78,39 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    _d('register — POST /auth/register for $email');
     _setLoading(true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    await _sessionService.saveSession(name: name, email: email);
-    _user = AppUser(name: name, email: email);
-    _status = AuthStatus.authenticated;
-    _setLoading(false);
+    try {
+      final result = await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+      );
+      await _session.saveSession(
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        userId: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+      );
+      _user = result.user;
+      _status = AuthStatus.authenticated;
+      _d('register — success, userId: ${result.user.id}');
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<void> logout() async {
-    await _sessionService.clearSession();
+    _d('logout — clearing session');
+    await _session.clearSession();
     _user = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();
+  }
+
+  static void _d(String msg) {
+    if (kDebugMode) dev.log(msg, name: 'NutriVision·Auth');
   }
 
   void _setLoading(bool value) {

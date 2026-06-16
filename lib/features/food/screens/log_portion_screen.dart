@@ -45,8 +45,13 @@ class _LogPortionScreenState extends State<LogPortionScreen> {
     });
   }
 
-  void _logMeal() {
+  bool _isSaving = false;
+
+  Future<void> _logMeal() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSaving) return;
+
+    setState(() => _isSaving = true);
 
     final food = widget.foodItem;
     final log = MealLog(
@@ -62,7 +67,18 @@ class _LogPortionScreenState extends State<LogPortionScreen> {
       source: MealSource.manual,
     );
 
-    context.read<MealLogProvider>().addLog(log);
+    try {
+      await context.read<MealLogProvider>().addLog(log, foodItemId: food.id);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red.shade700),
+      );
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    if (!mounted) return;
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
@@ -187,8 +203,14 @@ class _LogPortionScreenState extends State<LogPortionScreen> {
                 ).animate().fadeIn(delay: 100.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
                 const SizedBox(height: 24),
                 FilledButton(
-                  onPressed: _logMeal,
-                  child: const Text('Log Meal'),
+                  onPressed: _isSaving ? null : _logMeal,
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Log Meal'),
                 ).animate().fadeIn(delay: 150.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
               ],
             ),

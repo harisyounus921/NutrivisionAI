@@ -186,26 +186,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   title: 'Lifestyle & goals',
                   children: [
                     DropdownButtonFormField<ActivityLevel>(
+                      isExpanded: true,
                       initialValue: _activityLevel,
                       decoration: const InputDecoration(labelText: 'Activity Level'),
                       items: ActivityLevel.values
-                          .map((level) => DropdownMenuItem(value: level, child: Text(level.label)))
+                          .map((level) => DropdownMenuItem(value: level, child: Text(level.label, overflow: TextOverflow.ellipsis)))
                           .toList(),
                       onChanged: (value) => setState(() => _activityLevel = value!),
                     ),
                     DropdownButtonFormField<DietGoal>(
+                      isExpanded: true,
                       initialValue: _goal,
                       decoration: const InputDecoration(labelText: 'Goal'),
                       items: DietGoal.values
-                          .map((goal) => DropdownMenuItem(value: goal, child: Text(goal.label)))
+                          .map((goal) => DropdownMenuItem(value: goal, child: Text(goal.label, overflow: TextOverflow.ellipsis)))
                           .toList(),
                       onChanged: (value) => setState(() => _goal = value!),
                     ),
                     DropdownButtonFormField<DietaryPreference>(
+                      isExpanded: true,
                       initialValue: _dietaryPreference,
                       decoration: const InputDecoration(labelText: 'Dietary Preference'),
                       items: DietaryPreference.values
-                          .map((pref) => DropdownMenuItem(value: pref, child: Text(pref.label)))
+                          .map((pref) => DropdownMenuItem(value: pref, child: Text(pref.label, overflow: TextOverflow.ellipsis)))
                           .toList(),
                       onChanged: (value) => setState(() => _dietaryPreference = value!),
                     ),
