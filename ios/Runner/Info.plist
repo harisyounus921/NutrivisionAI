@@ -2,16 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Camera is needed to scan barcodes and recognize food from photos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo library access is needed to pick food photos for recognition.</string>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+
+	<!-- ============================================================ -->
+	<!-- Bundle identity -->
+	<!-- ============================================================ -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ai Diet</string>
+	<string>Nutrivision</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -19,7 +17,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ai_diet</string>
+	<string>Nutrivision</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -28,8 +26,54 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSRequiresIPhoneOS</key>
+
+	<!-- ============================================================ -->
+	<!-- Privacy / permission usage descriptions -->
+	<!-- Required for App Store submission and runtime permission dialogs -->
+	<!-- ============================================================ -->
+	<key>NSCameraUsageDescription</key>
+	<string>Nutrivision uses the camera to scan barcodes and recognize food from photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nutrivision needs access to your photo library to pick food images for recognition.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Nutrivision may save food recognition results to your photo library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Nutrivision uses the microphone when recording video for food recognition.</string>
+
+	<!-- ============================================================ -->
+	<!-- UI / launch -->
+	<!-- ============================================================ -->
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+
+	<!-- iPhone: portrait only — a diet tracking app doesn't need landscape -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!-- iPad: allow all orientations for split-screen compatibility -->
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Disables 60fps cap on ProMotion (120Hz) displays -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+
+	<!-- Needed for Flutter on iOS 13+ -->
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+
+	<!-- ============================================================ -->
+	<!-- Scene / multi-window (required by SceneDelegate) -->
+	<!-- ============================================================ -->
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -51,24 +95,20 @@
 			</array>
 		</dict>
 	</dict>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
+
+	<!-- ============================================================ -->
+	<!-- App Transport Security -->
+	<!-- Backend uses HTTPS so default ATS is fine — no exceptions needed -->
+	<!-- ============================================================ -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+
+	<!-- Required for iOS: indicates this app runs on iPhone -->
+	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+
 </dict>
 </plist>

@@ -17,7 +17,14 @@
       "WebFetch(domain:ai-diet-backend-y5ks.onrender.com)",
       "Bash(curl -s \"https://ai-diet-backend-y5ks.onrender.com/api/docs/\")",
       "Bash(curl -s \"https://ai-diet-backend-y5ks.onrender.com/api/docs/swagger-ui-init.js\")",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(sed -i '' 's/com\\\\.example\\\\.aiDiet\\\\.RunnerTests/com.haris.nutrivision.RunnerTests/g' ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(sed -i '' 's/com\\\\.example\\\\.aiDiet/com.haris.nutrivision/g' ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(python3 -c \"import json,sys; pkgs=json.load\\(sys.stdin\\)['packages']; ms=[p for p in pkgs if p['name']=='mobile_scanner']; print\\(ms[0]['rootUri'] if ms else 'not found'\\)\")",
+      "Read(//Users/haris/.pub-cache/hosted/pub.dev/mobile_scanner-6.0.11/ios/**)",
+      "Read(//Users/haris/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/ios/**)",
+      "Read(//Users/haris/.pub-cache/**)",
+      "Bash(pod install *)"
     ]
   }
 }
