@@ -17,6 +17,9 @@ dependencies:
   fl_chart: ^1.2.0
   google_fonts: ^8.1.0
   flutter_animate: ^4.5.2
+  flutter_local_notifications: ^18.0.0
+  health: ^12.0.0
+  timezone: ^0.9.0
 
 dev_dependencies:
   flutter_test:

@@ -24,7 +24,8 @@
       "Read(//Users/haris/.pub-cache/hosted/pub.dev/mobile_scanner-6.0.11/ios/**)",
       "Read(//Users/haris/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/ios/**)",
       "Read(//Users/haris/.pub-cache/**)",
-      "Bash(pod install *)"
+      "Bash(pod install *)",
+      "Bash(curl -s \"https://dl.google.com/dl/android/maven2/com/android/tools/build/desugar_jdk_libs/maven-metadata.xml\")"
     ]
   }
 }

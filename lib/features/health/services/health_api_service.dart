@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../../../core/services/api_client.dart';
 
 class HealthSummaryDay {
@@ -28,6 +30,23 @@ class HealthApiService {
   HealthApiService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   final ApiClient _api;
+
+  Future<void> syncHealthData({
+    required DateTime date,
+    required int steps,
+    required double caloriesBurned,
+    required int activeMinutes,
+  }) async {
+    final dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    await _api.post('/health/sync', body: {
+      'date': dateStr,
+      'steps': steps,
+      'caloriesBurned': caloriesBurned,
+      'activeMinutes': activeMinutes,
+      'source': Platform.isIOS ? 'apple_health' : 'google_fit',
+    });
+  }
 
   Future<List<HealthSummaryDay>> getSummary({int days = 7}) async {
     final from = DateTime.now().subtract(Duration(days: days - 1));

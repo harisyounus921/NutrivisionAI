@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -9,10 +11,9 @@ import '../../profile/providers/profile_provider.dart';
 import '../models/activity_log.dart';
 import '../providers/activity_log_provider.dart';
 import '../services/health_api_service.dart';
+import '../services/health_device_service.dart';
 import 'log_activity_screen.dart';
 
-/// Health tab: net calorie balance (consumed vs. burned), today's steps,
-/// activity log, and Google Fit/Apple Health sync entry points (FR-12, UC-09).
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
 
@@ -22,7 +23,10 @@ class HealthScreen extends StatefulWidget {
 
 class _HealthScreenState extends State<HealthScreen> {
   final _healthApiService = HealthApiService();
+
   List<HealthSummaryDay> _serverSummary = [];
+  bool _syncing = false;
+  String? _syncResult;
 
   @override
   void initState() {
@@ -40,10 +44,63 @@ class _HealthScreenState extends State<HealthScreen> {
     } catch (_) {}
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature is coming soon')),
-    );
+  Future<void> _syncHealthData() async {
+    if (_syncing) return;
+    setState(() {
+      _syncing = true;
+      _syncResult = null;
+    });
+
+    try {
+      // 1. Request permissions
+      final hasPerms = await HealthDeviceService.hasPermissions();
+      if (!hasPerms) {
+        final granted = await HealthDeviceService.requestPermissions();
+        if (!granted) {
+          if (!mounted) return;
+          setState(() {
+            _syncing = false;
+            _syncResult = 'Permission denied. Please grant health access in Settings.';
+          });
+          return;
+        }
+      }
+
+      // 2. Read today's device data
+      final data = await HealthDeviceService.readToday();
+      if (data == null) {
+        if (!mounted) return;
+        setState(() {
+          _syncing = false;
+          _syncResult = 'Could not read health data. Make sure the Health app has data for today.';
+        });
+        return;
+      }
+
+      // 3. Sync to backend
+      await _healthApiService.syncHealthData(
+        date: DateTime.now(),
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+        activeMinutes: data.activeMinutes,
+      );
+
+      // 4. Refresh server summary
+      await _loadServerSummary();
+
+      if (!mounted) return;
+      setState(() {
+        _syncing = false;
+        _syncResult =
+            'Synced: ${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _syncing = false;
+        _syncResult = 'Sync failed. Please try again.';
+      });
+    }
   }
 
   @override
@@ -75,15 +132,17 @@ class _HealthScreenState extends State<HealthScreen> {
                 .fadeIn(delay: 100.ms, duration: 350.ms)
                 .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 16),
-            if (_serverSummary.isNotEmpty)
+            if (_serverSummary.isNotEmpty) ...[
               _HealthSummaryCard(days: _serverSummary)
                   .animate()
                   .fadeIn(delay: 200.ms, duration: 350.ms)
                   .slideY(begin: 0.06, end: 0),
-            if (_serverSummary.isNotEmpty) const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
             _SyncCard(
-              onSyncGoogleFit: () => _showComingSoon(context, 'Google Fit sync'),
-              onSyncAppleHealth: () => _showComingSoon(context, 'Apple Health sync'),
+              syncing: _syncing,
+              syncResult: _syncResult,
+              onSync: _syncHealthData,
             ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
             const SizedBox(height: 24),
             Row(
@@ -228,15 +287,18 @@ class _StepsCard extends StatelessWidget {
 }
 
 class _SyncCard extends StatelessWidget {
-  const _SyncCard({required this.onSyncGoogleFit, required this.onSyncAppleHealth});
+  const _SyncCard({required this.syncing, required this.syncResult, required this.onSync});
 
-  final VoidCallback onSyncGoogleFit;
-  final VoidCallback onSyncAppleHealth;
+  final bool syncing;
+  final String? syncResult;
+  final VoidCallback onSync;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final label = Platform.isIOS ? 'Sync with Apple Health' : 'Sync with Google Fit';
+    final icon = Platform.isIOS ? Icons.favorite_border : Icons.fitness_center;
 
     return Card(
       child: Padding(
@@ -257,20 +319,41 @@ class _SyncCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Automatically import steps and calories burned from your phone.',
+              'Import today\'s steps and calories burned directly from your device.',
               style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
+            if (syncResult != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: syncResult!.startsWith('Synced')
+                      ? colorScheme.primaryContainer
+                      : colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  syncResult!,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: syncResult!.startsWith('Synced')
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onSyncGoogleFit,
-              icon: const Icon(Icons.fitness_center),
-              label: const Text('Sync with Google Fit'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: onSyncAppleHealth,
-              icon: const Icon(Icons.favorite_border),
-              label: const Text('Sync with Apple Health'),
+            FilledButton.icon(
+              onPressed: syncing ? null : onSync,
+              icon: syncing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(icon),
+              label: Text(syncing ? 'Syncing…' : label),
             ),
           ],
         ),
@@ -475,7 +558,6 @@ class _HealthSummaryCard extends StatelessWidget {
   }
 
   String _avgBurned() {
-    if (days.isEmpty) return '0 kcal';
     final active = days.where((d) => d.caloriesBurned > 0).toList();
     if (active.isEmpty) return '0 kcal';
     final avg = active.map((d) => d.caloriesBurned).reduce((a, b) => a + b) / active.length;
@@ -483,7 +565,6 @@ class _HealthSummaryCard extends StatelessWidget {
   }
 
   String _avgSteps() {
-    if (days.isEmpty) return '0';
     final active = days.where((d) => d.steps > 0).toList();
     if (active.isEmpty) return '0';
     final avg = active.map((d) => d.steps).reduce((a, b) => a + b) / active.length;
@@ -491,7 +572,6 @@ class _HealthSummaryCard extends StatelessWidget {
   }
 
   String _avgActive() {
-    if (days.isEmpty) return '0 min';
     final active = days.where((d) => d.activeMinutes > 0).toList();
     if (active.isEmpty) return '0 min';
     final avg = active.map((d) => d.activeMinutes).reduce((a, b) => a + b) / active.length;
@@ -515,7 +595,13 @@ class _HealthStat extends StatelessWidget {
         Icon(icon, color: color, size: 20),
         const SizedBox(height: 4),
         Text(value, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-        Text(label, style: textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
+        Text(
+          label,
+          style: textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 10,
+          ),
+        ),
       ],
     );
   }

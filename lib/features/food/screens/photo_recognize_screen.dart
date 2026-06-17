@@ -8,11 +8,10 @@ import '../../../core/navigation/app_page_route.dart';
 import '../../../core/services/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/food_item.dart';
+import '../models/recognition_candidate.dart';
 import '../services/food_service.dart';
 import 'log_portion_screen.dart';
 
-/// Pick or take a photo, upload it to POST /food/recognize,
-/// then show results and navigate to LogPortionScreen.
 class PhotoRecognizeScreen extends StatefulWidget {
   const PhotoRecognizeScreen({super.key});
 
@@ -26,7 +25,7 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
 
   File? _image;
   bool _recognizing = false;
-  List<FoodItem> _results = [];
+  List<RecognitionCandidate> _candidates = [];
   String? _error;
 
   @override
@@ -38,7 +37,9 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source, imageQuality: 80);
     if (picked == null) {
-      if (mounted) Navigator.of(context).pop();
+      if (mounted && source == ImageSource.camera && _candidates.isEmpty && _error == null) {
+        Navigator.of(context).pop();
+      }
       return;
     }
 
@@ -46,23 +47,23 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
     setState(() {
       _image = file;
       _recognizing = true;
-      _results = [];
+      _candidates = [];
       _error = null;
     });
 
     try {
       final bytes = await file.readAsBytes();
-      final items = await _foodService.recognizePhoto(bytes, filename: picked.name);
+      final candidates = await _foodService.recognizePhoto(bytes, filename: picked.name);
       if (!mounted) return;
-      if (items.isEmpty) {
+      if (candidates.isEmpty) {
         setState(() {
           _recognizing = false;
-          _error = 'No food recognized in this photo. Try a clearer image.';
+          _error = 'No food recognized in this photo. Try a clearer image of a meal.';
         });
       } else {
         setState(() {
           _recognizing = false;
-          _results = items;
+          _candidates = candidates;
         });
       }
     } on ApiException catch (e) {
@@ -71,7 +72,7 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
         _recognizing = false;
         _error = e.message;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _recognizing = false;
@@ -109,22 +110,21 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
           children: [
             if (_image != null)
               Container(
-                height: 220,
+                height: 200,
                 width: double.infinity,
-                decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
                 child: Image.file(_image!, fit: BoxFit.cover),
               ),
             Expanded(
               child: _recognizing
-                  ? _RecognizingPlaceholder()
+                  ? const _RecognizingPlaceholder()
                   : _error != null
-                      ? _ErrorState(
-                          message: _error!,
-                          onRetry: () => _pickImage(ImageSource.camera),
-                        )
-                      : _results.isEmpty
+                      ? _ErrorState(message: _error!, onRetry: () => _pickImage(ImageSource.camera))
+                      : _candidates.isEmpty
                           ? const _EmptyState()
-                          : _ResultsList(items: _results, onSelect: _selectItem),
+                          : _CandidatesList(candidates: _candidates, onSelect: _selectItem),
             ),
           ],
         ),
@@ -134,11 +134,12 @@ class _PhotoRecognizeScreenState extends State<PhotoRecognizeScreen> {
 }
 
 class _RecognizingPlaceholder extends StatelessWidget {
+  const _RecognizingPlaceholder();
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -171,7 +172,6 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -211,10 +211,10 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.items, required this.onSelect});
+class _CandidatesList extends StatelessWidget {
+  const _CandidatesList({required this.candidates, required this.onSelect});
 
-  final List<FoodItem> items;
+  final List<RecognitionCandidate> candidates;
   final void Function(FoodItem) onSelect;
 
   @override
@@ -228,33 +228,103 @@ class _ResultsList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
-            '${items.length} food${items.length == 1 ? '' : 's'} recognized — tap to log',
+            '${candidates.length} food${candidates.length == 1 ? '' : 's'} detected — tap to log',
             style: textTheme.titleSmall?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: items.length,
+            itemCount: candidates.length,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemBuilder: (context, index) {
-              final item = items[index];
+              final candidate = candidates[index];
+              final best = candidate.bestMatch!;
+              final pct = (candidate.confidence * 100).round();
+
               return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.secondary.withValues(alpha: 0.15),
-                    child: const Icon(Icons.restaurant_outlined, color: AppTheme.secondary),
+                margin: const EdgeInsets.only(bottom: 10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppTheme.cardRadius.toDouble()),
+                  onTap: () => onSelect(best),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppTheme.secondary.withValues(alpha: 0.15),
+                          child: const Icon(Icons.restaurant_outlined, color: AppTheme.secondary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _capitalize(candidate.label),
+                                      style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _confidenceColor(candidate.confidence).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '$pct%',
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: _confidenceColor(candidate.confidence),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                best.name,
+                                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${best.calories.toStringAsFixed(0)} kcal · ${best.servingDescription}',
+                                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                              ),
+                              if (candidate.matches.length > 1) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  '+${candidate.matches.length - 1} other match${candidate.matches.length == 2 ? '' : 'es'}',
+                                  style: textTheme.labelSmall?.copyWith(color: colorScheme.primary),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
                   ),
-                  title: Text(item.name, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                  subtitle: Text('${item.calories.toStringAsFixed(0)} kcal · ${item.servingDescription}'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => onSelect(item),
                 ),
-              ).animate().fadeIn(delay: (index * 40).ms, duration: 250.ms).slideX(begin: 0.05, end: 0);
+              ).animate().fadeIn(delay: (index * 60).ms, duration: 280.ms).slideX(begin: 0.05, end: 0);
             },
           ),
         ),
       ],
     );
+  }
+
+  String _capitalize(String s) =>
+      s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+
+  Color _confidenceColor(double confidence) {
+    if (confidence >= 0.85) return AppTheme.secondary;
+    if (confidence >= 0.65) return AppTheme.accent;
+    return Colors.orange;
   }
 }

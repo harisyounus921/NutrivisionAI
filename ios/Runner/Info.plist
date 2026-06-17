@@ -2,10 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-
-	<!-- ============================================================ -->
-	<!-- Bundle identity -->
-	<!-- ============================================================ -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -26,54 +24,25 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-
-	<!-- ============================================================ -->
-	<!-- Privacy / permission usage descriptions -->
-	<!-- Required for App Store submission and runtime permission dialogs -->
-	<!-- ============================================================ -->
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Nutrivision uses the camera to scan barcodes and recognize food from photos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Nutrivision needs access to your photo library to pick food images for recognition.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Nutrivision may save food recognition results to your photo library.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Nutrivision reads your steps and calories burned from Apple Health to give you an accurate net calorie balance.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Nutrivision may write workout data to Apple Health when you log activities.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Nutrivision uses the microphone when recording video for food recognition.</string>
-
-	<!-- ============================================================ -->
-	<!-- UI / launch -->
-	<!-- ============================================================ -->
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
-	<key>UIMainStoryboardFile</key>
-	<string>Main</string>
-
-	<!-- iPhone: portrait only — a diet tracking app doesn't need landscape -->
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-
-	<!-- iPad: allow all orientations for split-screen compatibility -->
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-
-	<!-- Disables 60fps cap on ProMotion (120Hz) displays -->
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-
-	<!-- Needed for Flutter on iOS 13+ -->
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-
-	<!-- ============================================================ -->
-	<!-- Scene / multi-window (required by SceneDelegate) -->
-	<!-- ============================================================ -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Nutrivision may save food recognition results to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nutrivision needs access to your photo library to pick food images for recognition.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -95,20 +64,22 @@
 			</array>
 		</dict>
 	</dict>
-
-	<!-- ============================================================ -->
-	<!-- App Transport Security -->
-	<!-- Backend uses HTTPS so default ATS is fine — no exceptions needed -->
-	<!-- ============================================================ -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-	</dict>
-
-	<!-- Required for iOS: indicates this app runs on iPhone -->
-	<key>LSRequiresIPhoneOS</key>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 </dict>
 </plist>

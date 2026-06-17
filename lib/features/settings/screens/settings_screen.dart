@@ -203,7 +203,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   secondary: const Icon(Icons.notifications_outlined),
                   title: const Text('Daily meal reminders'),
-                  subtitle: const Text('Reminder notifications are coming soon'),
+                  subtitle: Text(
+                    settings.mealRemindersEnabled
+                        ? 'Reminders at 8:00 AM, 1:00 PM and 7:00 PM'
+                        : 'Tap to enable breakfast, lunch & dinner reminders',
+                  ),
                   value: settings.mealRemindersEnabled,
                   onChanged: (value) => context.read<SettingsProvider>().setMealRemindersEnabled(value),
                 ),

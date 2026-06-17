@@ -1,5 +1,6 @@
 import '../../../core/services/api_client.dart';
 import '../models/food_item.dart';
+import '../models/recognition_candidate.dart';
 
 class FoodService {
   FoodService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -24,7 +25,13 @@ class FoodService {
     return FoodItem.fromApiJson(data as Map<String, dynamic>);
   }
 
-  Future<List<FoodItem>> recognizePhoto(List<int> imageBytes, {String filename = 'photo.jpg'}) async {
+  /// Returns candidates from POST /food/recognize.
+  /// Each candidate has a label, confidence score, and a list of matched food items.
+  /// Response shape: [{label, confidence, matches:[FoodItem, ...]}]
+  Future<List<RecognitionCandidate>> recognizePhoto(
+    List<int> imageBytes, {
+    String filename = 'photo.jpg',
+  }) async {
     final data = await _api.postMultipart(
       '/food/recognize',
       fileField: 'image',
@@ -32,7 +39,11 @@ class FoodService {
       filename: filename,
     );
     if (data == null) return [];
-    final items = data['items'] as List<dynamic>? ?? [data];
-    return items.cast<Map<String, dynamic>>().map(FoodItem.fromApiJson).toList();
+    final list = (data is List) ? data : (data['candidates'] as List? ?? []);
+    return list
+        .cast<Map<String, dynamic>>()
+        .map(RecognitionCandidate.fromJson)
+        .where((c) => c.bestMatch != null)
+        .toList();
   }
 }
