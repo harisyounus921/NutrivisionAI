@@ -25,7 +25,14 @@
       "Read(//Users/haris/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.12+2/ios/**)",
       "Read(//Users/haris/.pub-cache/**)",
       "Bash(pod install *)",
-      "Bash(curl -s \"https://dl.google.com/dl/android/maven2/com/android/tools/build/desugar_jdk_libs/maven-metadata.xml\")"
+      "Bash(curl -s \"https://dl.google.com/dl/android/maven2/com/android/tools/build/desugar_jdk_libs/maven-metadata.xml\")",
+      "Bash(grep \"targetSdkVersion\\\\|compileSdkVersion\" /Users/haris/flutter/packages/flutter_tools/gradle/src/main/groovy/flutter.groovy 2>/dev/null | head -5; grep \"targetSdkVersion\\\\|compileSdkVersion\" /Users/haris/flutter/packages/flutter_tools/gradle/flutter.groovy 2>/dev/null | head -5)",
+      "Read(//Users/haris/flutter/packages/flutter_tools/gradle/src/main/groovy/**)",
+      "Read(//Users/haris/flutter/packages/flutter_tools/gradle/**)",
+      "Bash(find /Users/haris/flutter/packages/flutter_tools/gradle -name \"*.groovy\" -o -name \"*.kts\" 2>/dev/null | head -5; find /Users/haris/flutter -name \"flutter.groovy\" 2>/dev/null | head -3)",
+      "Read(//Users/haris/flutter/**)",
+      "Read(//Users/haris/.gradle/**)",
+      "Bash(./gradlew -q properties)"
     ]
   }
 }
