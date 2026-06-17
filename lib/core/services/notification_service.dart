@@ -37,8 +37,21 @@ class NotificationService {
     _log('init — plugin initialized');
   }
 
+  /// Returns true if the OS has notifications enabled for this app
+  /// (without prompting the user).
+  static Future<bool> areNotificationsEnabled() async {
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) {
+      return await android.areNotificationsEnabled() ?? false;
+    }
+    // iOS — assume enabled if we got here (no silent check API)
+    return true;
+  }
+
   /// Requests OS-level notification permission (iOS prompt / Android 13+ prompt).
   /// Returns true if permission was granted.
+  /// Returns false if already permanently denied — caller should redirect to Settings.
   static Future<bool> requestPermission() async {
     bool granted = false;
 
@@ -60,7 +73,7 @@ class NotificationService {
       return granted;
     }
 
-    return true; // Other platforms
+    return true;
   }
 
   /// Schedules the three daily meal-reminder notifications.

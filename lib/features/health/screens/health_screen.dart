@@ -14,6 +14,8 @@ import '../services/health_api_service.dart';
 import '../services/health_device_service.dart';
 import 'log_activity_screen.dart';
 
+enum _SyncState { idle, syncing, success, permissionDenied, notInstalled, error }
+
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
 
@@ -25,15 +27,17 @@ class _HealthScreenState extends State<HealthScreen> {
   final _healthApiService = HealthApiService();
 
   List<HealthSummaryDay> _serverSummary = [];
-  bool _syncing = false;
+  _SyncState _syncState = _SyncState.idle;
   String? _syncResult;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<ActivityLogProvider>().loadLogs();
       _loadServerSummary();
+      _restoreLastSyncState();
     });
   }
 
@@ -44,40 +48,84 @@ class _HealthScreenState extends State<HealthScreen> {
     } catch (_) {}
   }
 
-  Future<void> _syncHealthData() async {
-    if (_syncing) return;
+  /// Restores the last sync banner from SharedPreferences so the success state
+  /// survives app restarts.
+  Future<void> _restoreLastSyncState() async {
+    final (:time, :result) = await HealthDeviceService.loadLastSync();
+    if (!mounted || time == null || result == null) return;
+    final now = DateTime.now();
+    final isToday = time.year == now.year && time.month == now.month && time.day == now.day;
+    final timeStr = _fmtTime(time);
     setState(() {
-      _syncing = true;
+      _syncState = _SyncState.success;
+      _syncResult = isToday ? 'Synced today at $timeStr · $result' : 'Last synced ${_fmtDate(time)} · $result';
+    });
+  }
+
+  String _fmtTime(DateTime dt) {
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m ${dt.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  String _fmtDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+
+  Future<void> _syncHealthData() async {
+    if (_syncState == _SyncState.syncing) return;
+    setState(() {
+      _syncState = _SyncState.syncing;
       _syncResult = null;
     });
 
     try {
-      // 1. Request permissions
-      final hasPerms = await HealthDeviceService.hasPermissions();
-      if (!hasPerms) {
-        final granted = await HealthDeviceService.requestPermissions();
-        if (!granted) {
+      // 1. On Android, verify Health Connect is installed
+      if (Platform.isAndroid) {
+        final availability = await HealthDeviceService.checkAndroidAvailability();
+        if (availability == HealthConnectAvailability.notInstalled) {
+          if (!mounted) return;
+          setState(() => _syncState = _SyncState.notInstalled);
+          return;
+        }
+        if (availability == HealthConnectAvailability.notSupported) {
           if (!mounted) return;
           setState(() {
-            _syncing = false;
-            _syncResult = 'Permission denied. Please grant health access in Settings.';
+            _syncState = _SyncState.error;
+            _syncResult = 'Health Connect is not supported on this device.';
           });
           return;
         }
       }
 
-      // 2. Read today's device data
+      // 2. Only request permissions if we haven't been granted before.
+      //    Health Connect may re-show its dialog even for already-granted permissions,
+      //    so we gate on a persisted flag that's set after the first successful grant.
+      final alreadyGranted = await HealthDeviceService.wasPermissionGranted();
+      if (!alreadyGranted) {
+        if (!mounted) return;
+        final granted = await HealthDeviceService.requestPermissions();
+        if (!granted) {
+          if (!mounted) return;
+          setState(() => _syncState = _SyncState.permissionDenied);
+          return;
+        }
+      }
+
+      // 3. Read today's device data. On failure, readToday() clears the permission
+      //    cache so the next tap re-requests (handles revoked permissions).
       final data = await HealthDeviceService.readToday();
       if (data == null) {
         if (!mounted) return;
         setState(() {
-          _syncing = false;
+          _syncState = _SyncState.error;
           _syncResult = 'Could not read health data. Make sure the Health app has data for today.';
         });
         return;
       }
 
-      // 3. Sync to backend
+      // 4. Sync to backend
       await _healthApiService.syncHealthData(
         date: DateTime.now(),
         steps: data.steps,
@@ -85,19 +133,22 @@ class _HealthScreenState extends State<HealthScreen> {
         activeMinutes: data.activeMinutes,
       );
 
-      // 4. Refresh server summary
       await _loadServerSummary();
 
+      // 5. Persist so the banner survives app restarts
+      final resultText = '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
+      await HealthDeviceService.saveLastSync(result: resultText);
+
       if (!mounted) return;
+      final now = DateTime.now();
       setState(() {
-        _syncing = false;
-        _syncResult =
-            'Synced: ${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal';
+        _syncState = _SyncState.success;
+        _syncResult = 'Synced today at ${_fmtTime(now)} · $resultText';
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _syncing = false;
+        _syncState = _SyncState.error;
         _syncResult = 'Sync failed. Please try again.';
       });
     }
@@ -140,9 +191,11 @@ class _HealthScreenState extends State<HealthScreen> {
               const SizedBox(height: 16),
             ],
             _SyncCard(
-              syncing: _syncing,
+              syncState: _syncState,
               syncResult: _syncResult,
               onSync: _syncHealthData,
+              onOpenSettings: HealthDeviceService.openHealthConnectSettings,
+              onInstall: HealthDeviceService.installOrOpenHealthConnect,
             ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
             const SizedBox(height: 24),
             Row(
@@ -287,18 +340,30 @@ class _StepsCard extends StatelessWidget {
 }
 
 class _SyncCard extends StatelessWidget {
-  const _SyncCard({required this.syncing, required this.syncResult, required this.onSync});
+  const _SyncCard({
+    required this.syncState,
+    required this.syncResult,
+    required this.onSync,
+    required this.onOpenSettings,
+    required this.onInstall,
+  });
 
-  final bool syncing;
+  final _SyncState syncState;
   final String? syncResult;
   final VoidCallback onSync;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onInstall;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final label = Platform.isIOS ? 'Sync with Apple Health' : 'Sync with Google Fit';
-    final icon = Platform.isIOS ? Icons.favorite_border : Icons.fitness_center;
+    final isSyncing = syncState == _SyncState.syncing;
+    final isSynced = syncState == _SyncState.success;
+    final platformLabel = Platform.isIOS ? 'Sync with Apple Health' : 'Sync with Google Fit';
+    final platformIcon = Platform.isIOS ? Icons.favorite_border : Icons.fitness_center;
+    final label = isSynced ? 'Sync Again' : platformLabel;
+    final icon = isSynced ? Icons.refresh : platformIcon;
 
     return Card(
       child: Padding(
@@ -322,41 +387,82 @@ class _SyncCard extends StatelessWidget {
               'Import today\'s steps and calories burned directly from your device.',
               style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
-            if (syncResult != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: syncResult!.startsWith('Synced')
-                      ? colorScheme.primaryContainer
-                      : colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  syncResult!,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: syncResult!.startsWith('Synced')
-                        ? colorScheme.onPrimaryContainer
-                        : colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+
+            // Status banner
+            if (syncState == _SyncState.success) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(message: syncResult ?? 'Synced!', isSuccess: true),
+            ] else if (syncState == _SyncState.permissionDenied) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(
+                message: Platform.isAndroid
+                    ? 'Permission denied. Open Health Connect to grant access.'
+                    : 'Permission denied. Enable Health access in iPhone Settings.',
+                isSuccess: false,
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onOpenSettings,
+                icon: const Icon(Icons.settings_outlined),
+                label: Text(Platform.isAndroid ? 'Open Health Connect' : 'Open Settings'),
+              ),
+            ] else if (syncState == _SyncState.notInstalled) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(
+                message: 'Health Connect is not installed. Install it to sync your data.',
+                isSuccess: false,
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onInstall,
+                icon: const Icon(Icons.download_outlined),
+                label: const Text('Install Health Connect'),
+              ),
+            ] else if (syncState == _SyncState.error && syncResult != null) ...[
+              const SizedBox(height: 10),
+              _StatusBanner(message: syncResult!, isSuccess: false),
             ],
+
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: syncing ? null : onSync,
-              icon: syncing
+              onPressed: isSyncing ? null : onSync,
+              icon: isSyncing
                   ? const SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : Icon(icon),
-              label: Text(syncing ? 'Syncing…' : label),
+              label: Text(isSyncing ? 'Syncing…' : label),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.message, required this.isSuccess});
+
+  final String message;
+  final bool isSuccess;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSuccess ? colorScheme.primaryContainer : colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: isSuccess ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +36,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       context.read<SettingsProvider>().loadSettings();
     });
+  }
+
+  void _showNotificationPermissionDialog() {
+    final isAndroid = Platform.isAndroid;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Notifications blocked'),
+        content: Text(
+          isAndroid
+              ? 'Notifications are disabled for Nutrivision AI.\n\n'
+                  'To enable them:\n'
+                  '1. Open Android Settings\n'
+                  '2. Apps → Nutrivision AI\n'
+                  '3. Notifications → Allow'
+              : 'Notifications are disabled for Nutrivision AI.\n\n'
+                  'To enable them:\n'
+                  '1. Open iPhone Settings\n'
+                  '2. Nutrivision → Notifications\n'
+                  '3. Allow Notifications → On',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _editProfile() async {
@@ -209,7 +239,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : 'Tap to enable breakfast, lunch & dinner reminders',
                   ),
                   value: settings.mealRemindersEnabled,
-                  onChanged: (value) => context.read<SettingsProvider>().setMealRemindersEnabled(value),
+                  onChanged: (value) async {
+                    final applied = await context.read<SettingsProvider>().setMealRemindersEnabled(value);
+                    if (!applied && value && mounted) {
+                      _showNotificationPermissionDialog();
+                    }
+                  },
                 ),
               ],
             ).animate().fadeIn(delay: 100.ms, duration: 300.ms).slideY(begin: 0.06, end: 0),

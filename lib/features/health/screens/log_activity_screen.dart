@@ -25,9 +25,10 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
     setState(() => _syncing = true);
 
     try {
-      // Request permissions if needed
-      final hasPerms = await HealthDeviceService.hasPermissions();
-      if (!hasPerms) {
+      // Only request permissions if we haven't been granted before
+      final alreadyGranted = await HealthDeviceService.wasPermissionGranted();
+      if (!alreadyGranted) {
+        if (!mounted) return;
         final granted = await HealthDeviceService.requestPermissions();
         if (!granted) {
           if (!mounted) return;

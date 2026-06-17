@@ -23,25 +23,37 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
 
     _mealRemindersEnabled = await _settingsService.loadMealRemindersEnabled();
-    _d('loadSettings — reminders enabled: $_mealRemindersEnabled');
+    _d('loadSettings — stored preference: $_mealRemindersEnabled');
 
-    // Reschedule on load in case the OS cleared them after reboot
     if (_mealRemindersEnabled) {
-      await NotificationService.scheduleMealReminders();
+      // Verify the OS permission is still granted (user may have revoked it in Settings)
+      final stillGranted = await NotificationService.areNotificationsEnabled();
+      if (stillGranted) {
+        await NotificationService.scheduleMealReminders();
+        _d('loadSettings — notifications active, reminders rescheduled');
+      } else {
+        // Permission was revoked — clear the stored preference to match reality
+        _mealRemindersEnabled = false;
+        await _settingsService.saveMealRemindersEnabled(false);
+        _d('loadSettings — OS permission revoked, preference cleared');
+      }
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  Future<void> setMealRemindersEnabled(bool value) async {
+  /// Enables or disables meal reminders.
+  /// Returns [true] if the change was applied.
+  /// Returns [false] if the OS permission was denied — caller should prompt user to open Settings.
+  Future<bool> setMealRemindersEnabled(bool value) async {
     _d('setMealRemindersEnabled → $value');
 
     if (value) {
       final granted = await NotificationService.requestPermission();
       if (!granted) {
-        _d('setMealRemindersEnabled — permission denied, not enabling');
-        return;
+        _d('setMealRemindersEnabled — OS permission denied');
+        return false;
       }
       await NotificationService.scheduleMealReminders();
     } else {
@@ -52,6 +64,7 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     await _settingsService.saveMealRemindersEnabled(value);
     _d('setMealRemindersEnabled — saved: $value');
+    return true;
   }
 
   static void _d(String msg) {
