@@ -3,6 +3,7 @@ import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -36,8 +37,7 @@ class NotificationService {
 
   static Future<void> init() async {
     tz.initializeTimeZones();
-    // Use device local offset to pick the closest IANA timezone
-    _setLocalTimezone();
+    await _configureLocalTimezone();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
@@ -49,9 +49,8 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
     );
 
-    // Create the Android notification channel explicitly on startup.
-    // Without this, the "Meal Reminders" category never appears in the system
-    // notification settings until the first notification fires.
+    // Create the Android notification channel explicitly on startup so it
+    // appears in system notification settings before the first notification fires.
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(
@@ -63,26 +62,19 @@ class NotificationService {
       ),
     );
 
-    _log('init — plugin initialized, local tz: ${tz.local.name}');
+    _log('init — ready, local tz: ${tz.local.name}');
   }
 
-  /// Best-effort local timezone detection without flutter_timezone package.
-  /// Maps the device's UTC offset to a representative IANA timezone so that
-  /// notifications fire at the correct local time.
-  static void _setLocalTimezone() {
+  /// Sets tz.local to the device's actual IANA timezone (e.g. "Asia/Karachi").
+  /// Without this, tz.local defaults to UTC and notifications fire at the wrong
+  /// local time (e.g. 8 AM UTC = 1 PM Pakistan time).
+  static Future<void> _configureLocalTimezone() async {
     try {
-      final offsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
-      // Walk all known zones and pick the first one with a matching current offset.
-      for (final loc in tz.timeZoneDatabase.locations.values) {
-        final tzNow = tz.TZDateTime.now(loc);
-        if (tzNow.timeZoneOffset.inMinutes == offsetMinutes) {
-          tz.setLocalLocation(loc);
-          return;
-        }
-      }
-    } catch (_) {
-      // Falls through to UTC default — notifications will still be scheduled,
-      // just relative to UTC rather than local time.
+      final info = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(info.identifier));
+      _log('timezone → ${info.identifier}');
+    } catch (e) {
+      _log('timezone detection failed: $e — defaulting to UTC');
     }
   }
 
