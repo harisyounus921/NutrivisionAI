@@ -1,6 +1,7 @@
 import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -15,15 +16,28 @@ class NotificationService {
   static const _channelName = 'Meal Reminders';
   static const _channelDesc = 'Daily reminders to log your meals';
 
+  static const _details = NotificationDetails(
+    android: AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+      channelDescription: _channelDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(sound: 'default'),
+  );
+
   // Default reminder times: breakfast, lunch, dinner
   static const _reminderTimes = [
-    _ReminderTime(8, 0, 0, 'Breakfast time! 🥗', 'Don\'t forget to log your breakfast.'),
-    _ReminderTime(13, 0, 1, 'Lunch time! 🥙', 'Log your lunch to stay on track.'),
-    _ReminderTime(19, 0, 2, 'Dinner time! 🍽️', 'Log your dinner and check your daily progress.'),
+    _ReminderTime(8, 0, 0, 'Breakfast time!', "Don't forget to log your breakfast."),
+    _ReminderTime(13, 0, 1, 'Lunch time!', 'Log your lunch to stay on track.'),
+    _ReminderTime(19, 0, 2, 'Dinner time!', 'Log your dinner and check your daily progress.'),
   ];
 
   static Future<void> init() async {
     tz.initializeTimeZones();
+    // Use device local offset to pick the closest IANA timezone
+    _setLocalTimezone();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
@@ -34,7 +48,42 @@ class NotificationService {
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: ios),
     );
-    _log('init — plugin initialized');
+
+    // Create the Android notification channel explicitly on startup.
+    // Without this, the "Meal Reminders" category never appears in the system
+    // notification settings until the first notification fires.
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: _channelDesc,
+        importance: Importance.high,
+      ),
+    );
+
+    _log('init — plugin initialized, local tz: ${tz.local.name}');
+  }
+
+  /// Best-effort local timezone detection without flutter_timezone package.
+  /// Maps the device's UTC offset to a representative IANA timezone so that
+  /// notifications fire at the correct local time.
+  static void _setLocalTimezone() {
+    try {
+      final offsetMinutes = DateTime.now().timeZoneOffset.inMinutes;
+      // Walk all known zones and pick the first one with a matching current offset.
+      for (final loc in tz.timeZoneDatabase.locations.values) {
+        final tzNow = tz.TZDateTime.now(loc);
+        if (tzNow.timeZoneOffset.inMinutes == offsetMinutes) {
+          tz.setLocalLocation(loc);
+          return;
+        }
+      }
+    } catch (_) {
+      // Falls through to UTC default — notifications will still be scheduled,
+      // just relative to UTC rather than local time.
+    }
   }
 
   /// Returns true if the OS has notifications enabled for this app
@@ -53,56 +102,84 @@ class NotificationService {
   /// Returns true if permission was granted.
   /// Returns false if already permanently denied — caller should redirect to Settings.
   static Future<bool> requestPermission() async {
-    bool granted = false;
+    try {
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) {
+        final result = await ios.requestPermissions(alert: true, badge: true, sound: true);
+        _log('requestPermission iOS → $result');
+        return result ?? false;
+      }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
-    if (ios != null) {
-      final result = await ios.requestPermissions(alert: true, badge: true, sound: true);
-      granted = result ?? false;
-      _log('requestPermission iOS → $granted');
-      return granted;
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final result = await android.requestNotificationsPermission();
+        _log('requestPermission Android → $result');
+        return result ?? false;
+      }
+
+      // Platform not resolved — assume granted (e.g. Android < 13 where no
+      // runtime permission is needed).
+      return true;
+    } catch (e) {
+      _log('requestPermission error: $e');
+      return false;
     }
-
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    if (android != null) {
-      final result = await android.requestNotificationsPermission();
-      granted = result ?? false;
-      _log('requestPermission Android → $granted');
-      return granted;
-    }
-
-    return true;
   }
 
   /// Schedules the three daily meal-reminder notifications.
-  /// Each repeats at the same wall-clock time every day.
+  /// Tries exact scheduling first; falls back to inexact if the device does not
+  /// allow exact alarms (Android 12 requires the user to grant SCHEDULE_EXACT_ALARM
+  /// in Special App Access — throwing PlatformException if not granted).
   static Future<void> scheduleMealReminders() async {
     await cancelAll();
     for (final r in _reminderTimes) {
       final scheduledDate = _nextInstanceOf(r.hour, r.minute);
-      await _plugin.zonedSchedule(
-        r.id,
-        r.title,
-        r.body,
-        scheduledDate,
-        NotificationDetails(
-          android: const AndroidNotificationDetails(
-            _channelId,
-            _channelName,
-            channelDescription: _channelDesc,
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: const DarwinNotificationDetails(sound: 'default'),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
-      _log('scheduled: ${r.title} at ${r.hour}:${r.minute.toString().padLeft(2, '0')} (next: $scheduledDate)');
+      bool scheduled = false;
+
+      // Attempt 1: exact alarm (fires precisely at the scheduled time)
+      try {
+        await _plugin.zonedSchedule(
+          r.id,
+          r.title,
+          r.body,
+          scheduledDate,
+          _details,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
+        scheduled = true;
+        _log('scheduled (exact): ${r.title} → $scheduledDate');
+      } on PlatformException catch (e) {
+        _log('exact alarm not permitted (${e.code}), falling back to inexact');
+      } catch (e) {
+        _log('exact alarm error: $e, falling back to inexact');
+      }
+
+      // Attempt 2: inexact alarm (fires approximately at the scheduled time —
+      // works on all API levels without special permissions)
+      if (!scheduled) {
+        try {
+          await _plugin.zonedSchedule(
+            r.id,
+            r.title,
+            r.body,
+            scheduledDate,
+            _details,
+            androidScheduleMode: AndroidScheduleMode.inexact,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time,
+          );
+          _log('scheduled (inexact): ${r.title} → $scheduledDate');
+        } catch (e) {
+          _log('inexact alarm error: $e');
+          rethrow;
+        }
+      }
     }
   }
 

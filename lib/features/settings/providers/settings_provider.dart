@@ -45,26 +45,31 @@ class SettingsProvider extends ChangeNotifier {
 
   /// Enables or disables meal reminders.
   /// Returns [true] if the change was applied.
-  /// Returns [false] if the OS permission was denied — caller should prompt user to open Settings.
+  /// Returns [false] if the OS permission was denied or scheduling failed —
+  /// caller should prompt user to open Settings.
   Future<bool> setMealRemindersEnabled(bool value) async {
     _d('setMealRemindersEnabled → $value');
-
-    if (value) {
-      final granted = await NotificationService.requestPermission();
-      if (!granted) {
-        _d('setMealRemindersEnabled — OS permission denied');
-        return false;
+    try {
+      if (value) {
+        final granted = await NotificationService.requestPermission();
+        if (!granted) {
+          _d('setMealRemindersEnabled — OS permission denied');
+          return false;
+        }
+        await NotificationService.scheduleMealReminders();
+      } else {
+        await NotificationService.cancelAll();
       }
-      await NotificationService.scheduleMealReminders();
-    } else {
-      await NotificationService.cancelAll();
-    }
 
-    _mealRemindersEnabled = value;
-    notifyListeners();
-    await _settingsService.saveMealRemindersEnabled(value);
-    _d('setMealRemindersEnabled — saved: $value');
-    return true;
+      _mealRemindersEnabled = value;
+      notifyListeners();
+      await _settingsService.saveMealRemindersEnabled(value);
+      _d('setMealRemindersEnabled — saved: $value');
+      return true;
+    } catch (e) {
+      _d('setMealRemindersEnabled error: $e');
+      return false;
+    }
   }
 
   static void _d(String msg) {

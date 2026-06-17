@@ -240,9 +240,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   value: settings.mealRemindersEnabled,
                   onChanged: (value) async {
-                    final applied = await context.read<SettingsProvider>().setMealRemindersEnabled(value);
-                    if (!applied && value && mounted) {
-                      _showNotificationPermissionDialog();
+                    try {
+                      final applied = await context.read<SettingsProvider>().setMealRemindersEnabled(value);
+                      if (!applied && value && mounted) {
+                        _showNotificationPermissionDialog();
+                      }
+                    } catch (_) {
+                      if (value && mounted) _showNotificationPermissionDialog();
                     }
                   },
                 ),
