@@ -14,14 +14,45 @@ class ActivityLogProvider extends ChangeNotifier {
   List<ActivityLog> _logs = [];
   bool _isLoading = false;
 
+  // Latest totals synced from the device (Health Connect / Apple Health). These
+  // are NOT stored as ActivityLog entries, so they're kept here and folded into
+  // today's totals — otherwise a sync (e.g. 197 steps) would show in the synced
+  // banner/summary but the "Today's Steps" card would still read 0.
+  int _deviceSteps = 0;
+  double _deviceCaloriesBurned = 0;
+  DateTime? _deviceDataDate;
+
   List<ActivityLog> get logs => _logs;
   bool get isLoading => _isLoading;
 
   List<ActivityLog> get todayLogs =>
       _logs.where((log) => _isSameDay(log.loggedAt, DateTime.now())).toList();
 
-  double get todayCaloriesBurned => _sum(todayLogs, (log) => log.caloriesBurned);
-  int get todaySteps => todayLogs.fold(0, (total, log) => total + log.steps);
+  bool get _deviceDataIsToday =>
+      _deviceDataDate != null && _isSameDay(_deviceDataDate!, DateTime.now());
+
+  double get todayCaloriesBurned =>
+      _sum(todayLogs, (log) => log.caloriesBurned) +
+      (_deviceDataIsToday ? _deviceCaloriesBurned : 0);
+
+  int get todaySteps =>
+      todayLogs.fold(0, (total, log) => total + log.steps) +
+      (_deviceDataIsToday ? _deviceSteps : 0);
+
+  /// Records the latest device-synced totals so today's steps/burned reflect a
+  /// sync even though sync data isn't persisted as [ActivityLog] entries.
+  /// [date] defaults to now; data is only counted while it's still today.
+  void setDeviceData({
+    required int steps,
+    required double caloriesBurned,
+    DateTime? date,
+  }) {
+    _deviceSteps = steps;
+    _deviceCaloriesBurned = caloriesBurned;
+    _deviceDataDate = date ?? DateTime.now();
+    _d('setDeviceData — $steps steps, ${caloriesBurned.toStringAsFixed(0)} kcal');
+    notifyListeners();
+  }
 
   Future<void> loadLogs() async {
     _d('loadLogs — reading local activity log (SharedPreferences)');

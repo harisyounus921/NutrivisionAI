@@ -106,6 +106,15 @@ class NotificationService {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
+        // If notifications are already enabled at the OS level, treat as
+        // granted. requestNotificationsPermission() returns null (→ false here)
+        // when there is no system dialog to show because permission is already
+        // granted, which would otherwise be misread as "denied".
+        final alreadyEnabled = await android.areNotificationsEnabled() ?? false;
+        if (alreadyEnabled) {
+          _log('requestPermission Android → already enabled');
+          return true;
+        }
         final result = await android.requestNotificationsPermission();
         _log('requestPermission Android → $result');
         return result ?? false;
@@ -203,3 +212,34 @@ class _ReminderTime {
   final String title;
   final String body;
 }
+
+/// Injectable seam over [NotificationService]'s static API so callers like
+/// [SettingsProvider] can be unit-tested without the platform plugin.
+/// Production code uses [defaultNotificationController].
+abstract class NotificationController {
+  Future<bool> areNotificationsEnabled();
+  Future<bool> requestPermission();
+  Future<void> scheduleMealReminders();
+  Future<void> cancelAll();
+}
+
+class _DefaultNotificationController implements NotificationController {
+  const _DefaultNotificationController();
+
+  @override
+  Future<bool> areNotificationsEnabled() =>
+      NotificationService.areNotificationsEnabled();
+
+  @override
+  Future<bool> requestPermission() => NotificationService.requestPermission();
+
+  @override
+  Future<void> scheduleMealReminders() =>
+      NotificationService.scheduleMealReminders();
+
+  @override
+  Future<void> cancelAll() => NotificationService.cancelAll();
+}
+
+const NotificationController defaultNotificationController =
+    _DefaultNotificationController();

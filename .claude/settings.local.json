@@ -32,7 +32,14 @@
       "Bash(find /Users/haris/flutter/packages/flutter_tools/gradle -name \"*.groovy\" -o -name \"*.kts\" 2>/dev/null | head -5; find /Users/haris/flutter -name \"flutter.groovy\" 2>/dev/null | head -3)",
       "Read(//Users/haris/flutter/**)",
       "Read(//Users/haris/.gradle/**)",
-      "Bash(./gradlew -q properties)"
+      "Bash(./gradlew -q properties)",
+      "Bash(flutter build *)",
+      "Bash(adb devices *)",
+      "Bash(adb shell *)",
+      "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb logcat *)",
+      "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb shell *)",
+      "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb devices *)",
+      "Bash(unzip -l build/app/outputs/flutter-apk/app-release.apk)"
     ]
   }
 }

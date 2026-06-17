@@ -51,11 +51,21 @@ class _HealthScreenState extends State<HealthScreen> {
   /// Restores the last sync banner from SharedPreferences so the success state
   /// survives app restarts.
   Future<void> _restoreLastSyncState() async {
-    final (:time, :result) = await HealthDeviceService.loadLastSync();
+    final (:time, :result, :steps, :caloriesBurned) =
+        await HealthDeviceService.loadLastSync();
     if (!mounted || time == null || result == null) return;
     final now = DateTime.now();
     final isToday = time.year == now.year && time.month == now.month && time.day == now.day;
     final timeStr = _fmtTime(time);
+    // Re-feed today's synced totals into the provider so the "Today's Steps"
+    // card stays consistent with the restored banner after an app restart.
+    if (isToday) {
+      context.read<ActivityLogProvider>().setDeviceData(
+            steps: steps,
+            caloriesBurned: caloriesBurned,
+            date: time,
+          );
+    }
     setState(() {
       _syncState = _SyncState.success;
       _syncResult = isToday ? 'Synced today at $timeStr · $result' : 'Last synced ${_fmtDate(time)} · $result';
@@ -125,7 +135,15 @@ class _HealthScreenState extends State<HealthScreen> {
         return;
       }
 
-      // 4. Sync to backend
+      // 4. Reflect today's device totals in the activity provider so the
+      //    "Today's Steps"/"Burned" cards match what was just synced.
+      if (!mounted) return;
+      context.read<ActivityLogProvider>().setDeviceData(
+            steps: data.steps,
+            caloriesBurned: data.caloriesBurned,
+          );
+
+      // 5. Sync to backend
       await _healthApiService.syncHealthData(
         date: DateTime.now(),
         steps: data.steps,
@@ -135,9 +153,13 @@ class _HealthScreenState extends State<HealthScreen> {
 
       await _loadServerSummary();
 
-      // 5. Persist so the banner survives app restarts
+      // 6. Persist so the banner and today's totals survive app restarts
       final resultText = '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
-      await HealthDeviceService.saveLastSync(result: resultText);
+      await HealthDeviceService.saveLastSync(
+        result: resultText,
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+      );
 
       if (!mounted) return;
       final now = DateTime.now();

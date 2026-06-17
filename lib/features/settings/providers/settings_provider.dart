@@ -6,10 +6,14 @@ import '../../../core/services/notification_service.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {
-  SettingsProvider({SettingsService? settingsService})
-      : _settingsService = settingsService ?? SettingsService();
+  SettingsProvider({
+    SettingsService? settingsService,
+    NotificationController? notifications,
+  })  : _settingsService = settingsService ?? SettingsService(),
+        _notifications = notifications ?? defaultNotificationController;
 
   final SettingsService _settingsService;
+  final NotificationController _notifications;
 
   bool _mealRemindersEnabled = false;
   bool _isLoading = false;
@@ -27,9 +31,9 @@ class SettingsProvider extends ChangeNotifier {
 
     if (_mealRemindersEnabled) {
       // Verify the OS permission is still granted (user may have revoked it in Settings)
-      final stillGranted = await NotificationService.areNotificationsEnabled();
+      final stillGranted = await _notifications.areNotificationsEnabled();
       if (stillGranted) {
-        await NotificationService.scheduleMealReminders();
+        await _notifications.scheduleMealReminders();
         _d('loadSettings — notifications active, reminders rescheduled');
       } else {
         // Permission was revoked — clear the stored preference to match reality
@@ -51,14 +55,14 @@ class SettingsProvider extends ChangeNotifier {
     _d('setMealRemindersEnabled → $value');
     try {
       if (value) {
-        final granted = await NotificationService.requestPermission();
+        final granted = await _notifications.requestPermission();
         if (!granted) {
           _d('setMealRemindersEnabled — OS permission denied');
           return false;
         }
-        await NotificationService.scheduleMealReminders();
+        await _notifications.scheduleMealReminders();
       } else {
-        await NotificationService.cancelAll();
+        await _notifications.cancelAll();
       }
 
       _mealRemindersEnabled = value;

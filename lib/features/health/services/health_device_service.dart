@@ -112,25 +112,41 @@ class HealthDeviceService {
 
   static const _lastSyncTimeKey = 'health_last_sync_time';
   static const _lastSyncResultKey = 'health_last_sync_result';
+  static const _lastSyncStepsKey = 'health_last_sync_steps';
+  static const _lastSyncCaloriesKey = 'health_last_sync_calories';
 
-  static Future<void> saveLastSync({required String result}) async {
+  static Future<void> saveLastSync({
+    required String result,
+    int steps = 0,
+    double caloriesBurned = 0,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastSyncTimeKey, DateTime.now().toIso8601String());
     await prefs.setString(_lastSyncResultKey, result);
+    await prefs.setInt(_lastSyncStepsKey, steps);
+    await prefs.setDouble(_lastSyncCaloriesKey, caloriesBurned);
   }
 
-  static Future<({DateTime? time, String? result})> loadLastSync() async {
+  static Future<({DateTime? time, String? result, int steps, double caloriesBurned})>
+      loadLastSync() async {
     final prefs = await SharedPreferences.getInstance();
     final timeStr = prefs.getString(_lastSyncTimeKey);
     final result = prefs.getString(_lastSyncResultKey);
     final time = timeStr != null ? DateTime.tryParse(timeStr) : null;
-    return (time: time, result: result);
+    return (
+      time: time,
+      result: result,
+      steps: prefs.getInt(_lastSyncStepsKey) ?? 0,
+      caloriesBurned: prefs.getDouble(_lastSyncCaloriesKey) ?? 0,
+    );
   }
 
   static Future<void> clearLastSync() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastSyncTimeKey);
     await prefs.remove(_lastSyncResultKey);
+    await prefs.remove(_lastSyncStepsKey);
+    await prefs.remove(_lastSyncCaloriesKey);
   }
 
   /// Reads today's steps, calories burned, and active minutes from the device.

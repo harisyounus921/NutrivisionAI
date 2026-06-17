@@ -16,8 +16,16 @@ import 'features/settings/providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init();
-  await HealthDeviceService.configure();
+  try {
+    await NotificationService.init();
+  } catch (e, s) {
+    debugPrint('NotificationService.init failed: $e\n$s');
+  }
+  try {
+    await HealthDeviceService.configure();
+  } catch (e, s) {
+    debugPrint('HealthDeviceService.configure failed: $e\n$s');
+  }
   runApp(const NutrivisionApp());
 }
 
