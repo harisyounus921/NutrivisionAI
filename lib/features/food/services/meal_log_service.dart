@@ -6,7 +6,6 @@ class MealLogService {
 
   final ApiClient _api;
 
-  /// Loads meal logs for the last 8 days (covers today + 7-day trend).
   Future<List<MealLog>> loadLogs() async {
     final from = DateTime.now().subtract(const Duration(days: 7));
     final fromStr = DateTime(from.year, from.month, from.day).toIso8601String();
@@ -20,14 +19,12 @@ class MealLogService {
         .toList();
   }
 
-  /// Posts a new meal to the backend and returns the persisted log.
   Future<MealLog> addLog(MealLog log, {String? foodItemId}) async {
     final data = await _api.post(
       '/meals',
       body: log.toApiCreateBody(foodItemId: foodItemId),
     ) as Map<String, dynamic>;
 
-    // Response is { mealLog: {...}, gamification: {...} }
     final mealLogJson = data['mealLog'] as Map<String, dynamic>? ?? data;
     return MealLog.fromApiJson(mealLogJson);
   }
@@ -37,6 +34,5 @@ class MealLogService {
   }
 
   Future<void> clearLogs() async {
-    // Bulk clear is handled by DELETE /settings/account; no-op here.
   }
 }
