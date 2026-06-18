@@ -6,7 +6,6 @@ import '../../gamification/screens/achievements_screen.dart';
 import '../../health/screens/health_screen.dart';
 import 'home_screen.dart';
 
-/// Post-login app shell with bottom navigation across the main feature tabs.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 

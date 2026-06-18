@@ -19,8 +19,6 @@ import '../../profile/screens/profile_setup_screen.dart';
 import '../providers/settings_provider.dart';
 import '../services/data_management_service.dart';
 
-/// Settings tab content (UC-11): account, notification preferences, and
-/// data export/deletion (FR-15, UC-12).
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 

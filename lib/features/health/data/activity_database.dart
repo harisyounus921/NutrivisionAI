@@ -1,7 +1,5 @@
 import '../models/activity_item.dart';
 
-/// Local seed activity database used for manual activity logging until
-/// Google Fit/Apple Health sync is integrated.
 const List<ActivityItem> activityDatabase = [
   ActivityItem(name: 'Walking', durationDescription: '30 min', caloriesBurned: 120, steps: 3000),
   ActivityItem(name: 'Running', durationDescription: '30 min', caloriesBurned: 300, steps: 4500),

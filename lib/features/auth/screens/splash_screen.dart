@@ -10,8 +10,6 @@ import '../../profile/providers/profile_provider.dart';
 import '../providers/auth_provider.dart';
 import 'login_screen.dart';
 
-/// Checks for a persisted session on launch, then routes to [HomeScreen] or
-/// [LoginScreen] accordingly.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

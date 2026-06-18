@@ -2,8 +2,6 @@ import '../../food/data/food_database.dart';
 import '../../food/models/food_item.dart';
 import '../../profile/models/user_profile.dart';
 
-/// Snapshot of the user's profile and today's logged nutrition, used to
-/// personalize the AI coach's replies.
 class CoachContext {
   const CoachContext({
     required this.profile,
@@ -23,11 +21,6 @@ class CoachContext {
 const _meatKeywords = ['chicken', 'beef'];
 const _glutenKeywords = ['roti', 'oatmeal'];
 
-/// Generates rule-based replies for the AI diet coach, grounded in the
-/// user's profile and today's logged nutrition.
-///
-/// Stands in for the GPT/Dialogflow-backed coach described in the README
-/// until a real conversational AI backend is wired up.
 class CoachResponseService {
   String reply(String message, CoachContext context) {
     final text = message.toLowerCase().trim();

@@ -3,8 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/app_theme.dart';
 
-/// A tappable card presenting one logging option (e.g. search, scan, sync),
-/// used by the "Log Meal" and "Log Activity" entry screens.
 class LogOptionCard extends StatelessWidget {
   const LogOptionCard({
     super.key,

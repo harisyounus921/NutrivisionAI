@@ -32,7 +32,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await _authService.forgotPassword(_emailController.text.trim());
     } catch (_) {
-      // Always show success per API spec (don't leak which emails exist).
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

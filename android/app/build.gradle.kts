@@ -21,7 +21,6 @@ android {
 
     defaultConfig {
         applicationId = "com.haris.nutrivision"
-        // Health Connect requires API 26+ (Android 8.0)
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

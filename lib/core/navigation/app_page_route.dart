@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// A [PageRouteBuilder] with a subtle fade + upward slide transition, used
-/// in place of [MaterialPageRoute] across the app for a more polished feel
-/// while still using plain [Navigator] push/pushReplacement/pushAndRemoveUntil.
 class AppPageRoute<T> extends PageRouteBuilder<T> {
   AppPageRoute({required WidgetBuilder builder})
       : super(

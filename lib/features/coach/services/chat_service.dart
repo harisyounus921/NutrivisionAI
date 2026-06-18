@@ -59,10 +59,6 @@ class ChatService {
 
   final ApiClient _api;
 
-  // ---------------------------------------------------------------------------
-  // API
-  // ---------------------------------------------------------------------------
-
   Future<List<ConversationSummary>> getConversations() async {
     final data = await _api.get('/coach/conversations') as List<dynamic>? ?? [];
     return data.cast<Map<String, dynamic>>().map(ConversationSummary.fromJson).toList();
@@ -89,10 +85,6 @@ class ChatService {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // conversationId persistence
-  // ---------------------------------------------------------------------------
-
   Future<String?> getConversationId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyConversationId);
@@ -107,10 +99,6 @@ class ChatService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyConversationId);
   }
-
-  // ---------------------------------------------------------------------------
-  // Local message history
-  // ---------------------------------------------------------------------------
 
   Future<List<ChatMessage>> loadMessages() async {
     final prefs = await SharedPreferences.getInstance();

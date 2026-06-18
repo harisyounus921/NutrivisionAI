@@ -4,8 +4,6 @@ import 'package:ai_diet/core/services/notification_service.dart';
 import 'package:ai_diet/features/settings/providers/settings_provider.dart';
 import 'package:ai_diet/features/settings/services/settings_service.dart';
 
-/// Records calls and returns scripted results so the provider's permission /
-/// scheduling logic can be exercised without the platform plugin.
 class _FakeNotifications implements NotificationController {
   _FakeNotifications({this.permissionGranted = true, this.osEnabled = true});
 
@@ -32,7 +30,6 @@ class _FakeNotifications implements NotificationController {
   Future<void> cancelAll() async => cancelCalls++;
 }
 
-/// In-memory stand-in for [SettingsService] — no ApiClient / network.
 class _FakeSettingsService extends SettingsService {
   _FakeSettingsService({this.stored = false});
 
@@ -82,7 +79,7 @@ void main() {
       expect(applied, isFalse);
       expect(provider.mealRemindersEnabled, isFalse);
       expect(notifications.scheduleCalls, 0);
-      expect(settings.lastSaved, isNull); // nothing persisted
+      expect(settings.lastSaved, isNull);
     });
 
     test('disabling cancels reminders and persists false', () async {
@@ -98,7 +95,7 @@ void main() {
       expect(applied, isTrue);
       expect(provider.mealRemindersEnabled, isFalse);
       expect(notifications.cancelCalls, 1);
-      expect(notifications.requestPermissionCalls, 0); // no prompt when turning off
+      expect(notifications.requestPermissionCalls, 0);
       expect(settings.lastSaved, isFalse);
     });
   });
@@ -132,7 +129,7 @@ void main() {
 
       expect(provider.mealRemindersEnabled, isFalse);
       expect(notifications.scheduleCalls, 0);
-      expect(settings.lastSaved, isFalse); // preference reconciled to reality
+      expect(settings.lastSaved, isFalse);
     });
   });
 }

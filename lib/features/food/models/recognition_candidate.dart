@@ -1,7 +1,5 @@
 import 'food_item.dart';
 
-/// One detected food label from POST /food/recognize.
-/// The backend returns: [{label, confidence, matches:[FoodItem, ...]}]
 class RecognitionCandidate {
   const RecognitionCandidate({
     required this.label,
@@ -10,7 +8,7 @@ class RecognitionCandidate {
   });
 
   final String label;
-  final double confidence; // 0.0 – 1.0
+  final double confidence;
   final List<FoodItem> matches;
 
   FoodItem? get bestMatch => matches.isEmpty ? null : matches.first;

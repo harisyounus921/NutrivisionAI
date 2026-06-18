@@ -27,7 +27,6 @@ class ActivityLogService {
     await prefs.setStringList(_keyActivityLogs, encoded);
   }
 
-  /// Syncs the day's aggregated activity totals to the backend.
   Future<void> syncDay(DateTime date, List<ActivityLog> dayLogs) async {
     final steps = dayLogs.fold(0, (sum, log) => sum + log.steps);
     final calories = dayLogs.fold<double>(0, (sum, log) => sum + log.caloriesBurned);

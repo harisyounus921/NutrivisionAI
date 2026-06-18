@@ -10,8 +10,6 @@ import '../providers/chat_provider.dart';
 import '../services/coach_response_service.dart';
 import 'conversations_screen.dart';
 
-/// AI Coach chat tab: ask dietary questions, receive guidance grounded in
-/// the user's profile and today's logged nutrition (FR-11, UC-08).
 class CoachChatScreen extends StatefulWidget {
   const CoachChatScreen({super.key});
 

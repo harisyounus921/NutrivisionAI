@@ -6,7 +6,6 @@ import '../../../core/theme/app_theme.dart';
 import '../providers/gamification_provider.dart';
 import '../services/gamification_service.dart';
 
-/// Achievements tab: streaks and badges backed by the gamification API (FR-14, UC-10).
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
 

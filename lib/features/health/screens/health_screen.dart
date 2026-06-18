@@ -48,8 +48,6 @@ class _HealthScreenState extends State<HealthScreen> {
     } catch (_) {}
   }
 
-  /// Restores the last sync banner from SharedPreferences so the success state
-  /// survives app restarts.
   Future<void> _restoreLastSyncState() async {
     final (:time, :result, :steps, :caloriesBurned) =
         await HealthDeviceService.loadLastSync();
@@ -57,8 +55,6 @@ class _HealthScreenState extends State<HealthScreen> {
     final now = DateTime.now();
     final isToday = time.year == now.year && time.month == now.month && time.day == now.day;
     final timeStr = _fmtTime(time);
-    // Re-feed today's synced totals into the provider so the "Today's Steps"
-    // card stays consistent with the restored banner after an app restart.
     if (isToday) {
       context.read<ActivityLogProvider>().setDeviceData(
             steps: steps,
@@ -91,7 +87,6 @@ class _HealthScreenState extends State<HealthScreen> {
     });
 
     try {
-      // 1. On Android, verify Health Connect is installed
       if (Platform.isAndroid) {
         final availability = await HealthDeviceService.checkAndroidAvailability();
         if (availability == HealthConnectAvailability.notInstalled) {
@@ -109,9 +104,6 @@ class _HealthScreenState extends State<HealthScreen> {
         }
       }
 
-      // 2. Only request permissions if we haven't been granted before.
-      //    Health Connect may re-show its dialog even for already-granted permissions,
-      //    so we gate on a persisted flag that's set after the first successful grant.
       final alreadyGranted = await HealthDeviceService.wasPermissionGranted();
       if (!alreadyGranted) {
         if (!mounted) return;
@@ -123,8 +115,6 @@ class _HealthScreenState extends State<HealthScreen> {
         }
       }
 
-      // 3. Read today's device data. On failure, readToday() clears the permission
-      //    cache so the next tap re-requests (handles revoked permissions).
       final data = await HealthDeviceService.readToday();
       if (data == null) {
         if (!mounted) return;
@@ -135,15 +125,12 @@ class _HealthScreenState extends State<HealthScreen> {
         return;
       }
 
-      // 4. Reflect today's device totals in the activity provider so the
-      //    "Today's Steps"/"Burned" cards match what was just synced.
       if (!mounted) return;
       context.read<ActivityLogProvider>().setDeviceData(
             steps: data.steps,
             caloriesBurned: data.caloriesBurned,
           );
 
-      // 5. Sync to backend
       await _healthApiService.syncHealthData(
         date: DateTime.now(),
         steps: data.steps,
@@ -153,7 +140,6 @@ class _HealthScreenState extends State<HealthScreen> {
 
       await _loadServerSummary();
 
-      // 6. Persist so the banner and today's totals survive app restarts
       final resultText = '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
       await HealthDeviceService.saveLastSync(
         result: resultText,
@@ -410,7 +396,6 @@ class _SyncCard extends StatelessWidget {
               style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
 
-            // Status banner
             if (syncState == _SyncState.success) ...[
               const SizedBox(height: 10),
               _StatusBanner(message: syncResult ?? 'Synced!', isSuccess: true),

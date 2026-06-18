@@ -4,8 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
 import '../services/chat_service.dart';
 
-/// Shows past coach conversations fetched from GET /coach/conversations.
-/// Tapping a conversation shows the full message history from GET /coach/conversations/{id}.
 class ConversationsScreen extends StatefulWidget {
   const ConversationsScreen({super.key});
 
@@ -195,10 +193,6 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Conversation detail — shows all messages in a single conversation
-// ---------------------------------------------------------------------------
 
 class _ConversationDetailScreen extends StatefulWidget {
   const _ConversationDetailScreen({required this.conversation, required this.service});

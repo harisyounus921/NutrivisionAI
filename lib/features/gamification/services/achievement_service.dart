@@ -4,7 +4,6 @@ import '../../profile/models/user_profile.dart';
 import '../data/achievement_database.dart';
 import '../models/achievement.dart';
 
-/// Progress toward a single [Achievement], computed from the user's logs.
 class AchievementProgress {
   const AchievementProgress({required this.achievement, required this.progress, required this.isUnlocked});
 
@@ -13,9 +12,6 @@ class AchievementProgress {
   final bool isUnlocked;
 }
 
-/// Snapshot of the user's streaks and badge progress (UC-10), derived
-/// entirely from meal logs, activity logs, and the user's profile — no
-/// separate gamification persistence is needed.
 class GamificationSummary {
   const GamificationSummary({
     required this.currentStreak,

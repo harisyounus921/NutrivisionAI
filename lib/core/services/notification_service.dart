@@ -7,9 +7,6 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Wraps flutter_local_notifications for meal-reminder scheduling.
-/// Call [init] once at app startup (before runApp), then call
-/// [scheduleMealReminders] / [cancelAll] based on the user's preference.
 class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
 
@@ -28,7 +25,6 @@ class NotificationService {
     iOS: DarwinNotificationDetails(sound: 'default'),
   );
 
-  // Default reminder times: breakfast, lunch, dinner
   static const _reminderTimes = [
     _ReminderTime(8, 0, 0, 'Breakfast time!', "Don't forget to log your breakfast."),
     _ReminderTime(13, 0, 1, 'Lunch time!', 'Log your lunch to stay on track.'),
@@ -49,8 +45,6 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
     );
 
-    // Create the Android notification channel explicitly on startup so it
-    // appears in system notification settings before the first notification fires.
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(
@@ -65,9 +59,6 @@ class NotificationService {
     _log('init — ready, local tz: ${tz.local.name}');
   }
 
-  /// Sets tz.local to the device's actual IANA timezone (e.g. "Asia/Karachi").
-  /// Without this, tz.local defaults to UTC and notifications fire at the wrong
-  /// local time (e.g. 8 AM UTC = 1 PM Pakistan time).
   static Future<void> _configureLocalTimezone() async {
     try {
       final info = await FlutterTimezone.getLocalTimezone();
@@ -78,21 +69,15 @@ class NotificationService {
     }
   }
 
-  /// Returns true if the OS has notifications enabled for this app
-  /// (without prompting the user).
   static Future<bool> areNotificationsEnabled() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
       return await android.areNotificationsEnabled() ?? false;
     }
-    // iOS — assume enabled if we got here (no silent check API)
     return true;
   }
 
-  /// Requests OS-level notification permission (iOS prompt / Android 13+ prompt).
-  /// Returns true if permission was granted.
-  /// Returns false if already permanently denied — caller should redirect to Settings.
   static Future<bool> requestPermission() async {
     try {
       final ios = _plugin.resolvePlatformSpecificImplementation<
@@ -106,10 +91,6 @@ class NotificationService {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
-        // If notifications are already enabled at the OS level, treat as
-        // granted. requestNotificationsPermission() returns null (→ false here)
-        // when there is no system dialog to show because permission is already
-        // granted, which would otherwise be misread as "denied".
         final alreadyEnabled = await android.areNotificationsEnabled() ?? false;
         if (alreadyEnabled) {
           _log('requestPermission Android → already enabled');
@@ -120,8 +101,6 @@ class NotificationService {
         return result ?? false;
       }
 
-      // Platform not resolved — assume granted (e.g. Android < 13 where no
-      // runtime permission is needed).
       return true;
     } catch (e) {
       _log('requestPermission error: $e');
@@ -129,17 +108,12 @@ class NotificationService {
     }
   }
 
-  /// Schedules the three daily meal-reminder notifications.
-  /// Tries exact scheduling first; falls back to inexact if the device does not
-  /// allow exact alarms (Android 12 requires the user to grant SCHEDULE_EXACT_ALARM
-  /// in Special App Access — throwing PlatformException if not granted).
   static Future<void> scheduleMealReminders() async {
     await cancelAll();
     for (final r in _reminderTimes) {
       final scheduledDate = _nextInstanceOf(r.hour, r.minute);
       bool scheduled = false;
 
-      // Attempt 1: exact alarm (fires precisely at the scheduled time)
       try {
         await _plugin.zonedSchedule(
           r.id,
@@ -160,8 +134,6 @@ class NotificationService {
         _log('exact alarm error: $e, falling back to inexact');
       }
 
-      // Attempt 2: inexact alarm (fires approximately at the scheduled time —
-      // works on all API levels without special permissions)
       if (!scheduled) {
         try {
           await _plugin.zonedSchedule(
@@ -184,7 +156,6 @@ class NotificationService {
     }
   }
 
-  /// Cancels all scheduled notifications.
   static Future<void> cancelAll() async {
     await _plugin.cancelAll();
     _log('cancelAll — all reminders cancelled');
@@ -213,9 +184,6 @@ class _ReminderTime {
   final String body;
 }
 
-/// Injectable seam over [NotificationService]'s static API so callers like
-/// [SettingsProvider] can be unit-tested without the platform plugin.
-/// Production code uses [defaultNotificationController].
 abstract class NotificationController {
   Future<bool> areNotificationsEnabled();
   Future<bool> requestPermission();

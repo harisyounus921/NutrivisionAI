@@ -22,7 +22,6 @@ String _inferMealType() {
   return 'snack';
 }
 
-/// A single logged meal entry, with totals already scaled by [servings].
 class MealLog {
   const MealLog({
     required this.id,
@@ -48,7 +47,6 @@ class MealLog {
   final DateTime loggedAt;
   final MealSource source;
 
-  /// Build the API POST body for logging this meal.
   Map<String, dynamic> toApiCreateBody({String? foodItemId}) => {
         'foodItemId': ?foodItemId,
         'name': foodName,
@@ -80,7 +78,6 @@ class MealLog {
     );
   }
 
-  // Keep for backward compat with existing local data / tests.
   Map<String, dynamic> toJson() => {
         'id': id,
         'foodName': foodName,

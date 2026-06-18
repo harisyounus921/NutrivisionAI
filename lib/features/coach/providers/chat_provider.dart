@@ -7,15 +7,10 @@ import '../services/chat_service.dart';
 import '../services/coach_response_service.dart';
 
 class ChatProvider extends ChangeNotifier {
-  ChatProvider({ChatService? chatService, CoachResponseService? coachResponseService})
-      : _chatService = chatService ?? ChatService(),
-        _coachResponseService = coachResponseService ?? CoachResponseService();
+  ChatProvider({ChatService? chatService})
+      : _chatService = chatService ?? ChatService();
 
   final ChatService _chatService;
-
-  // Kept for signature compatibility with CoachChatScreen; no longer used for replies.
-  // ignore: unused_field
-  final CoachResponseService _coachResponseService;
 
   List<ChatMessage> _messages = [];
   bool _isLoading = false;

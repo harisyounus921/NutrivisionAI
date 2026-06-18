@@ -39,7 +39,10 @@
       "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb logcat *)",
       "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb shell *)",
       "Bash(/Users/haris/Library/Android/sdk/platform-tools/adb devices *)",
-      "Bash(unzip -l build/app/outputs/flutter-apk/app-release.apk)"
+      "Bash(unzip -l build/app/outputs/flutter-apk/app-release.apk)",
+      "Bash(python3 /tmp/strip_dart_comments.py /tmp/test_api.dart)",
+      "Bash(xargs -0 python3 /tmp/strip_dart_comments.py)",
+      "Bash(python3 -)"
     ]
   }
 }

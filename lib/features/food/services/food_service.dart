@@ -25,9 +25,6 @@ class FoodService {
     return FoodItem.fromApiJson(data as Map<String, dynamic>);
   }
 
-  /// Returns candidates from POST /food/recognize.
-  /// Each candidate has a label, confidence score, and a list of matched food items.
-  /// Response shape: [{label, confidence, matches:[FoodItem, ...]}]
   Future<List<RecognitionCandidate>> recognizePhoto(
     List<int> imageBytes, {
     String filename = 'photo.jpg',

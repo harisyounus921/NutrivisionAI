@@ -1,7 +1,5 @@
 import '../models/food_item.dart';
 
-/// Local seed food database used for manual search/logging until a nutrition
-/// API (USDA/Edamam/Nutritionix) is integrated.
 const List<FoodItem> foodDatabase = [
   FoodItem(name: 'Apple', servingDescription: '1 medium (182g)', calories: 95, proteinG: 0.5, carbsG: 25, fatG: 0.3),
   FoodItem(name: 'Banana', servingDescription: '1 medium (118g)', calories: 105, proteinG: 1.3, carbsG: 27, fatG: 0.4),

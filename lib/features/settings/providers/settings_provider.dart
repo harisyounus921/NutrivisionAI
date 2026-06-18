@@ -30,13 +30,11 @@ class SettingsProvider extends ChangeNotifier {
     _d('loadSettings — stored preference: $_mealRemindersEnabled');
 
     if (_mealRemindersEnabled) {
-      // Verify the OS permission is still granted (user may have revoked it in Settings)
       final stillGranted = await _notifications.areNotificationsEnabled();
       if (stillGranted) {
         await _notifications.scheduleMealReminders();
         _d('loadSettings — notifications active, reminders rescheduled');
       } else {
-        // Permission was revoked — clear the stored preference to match reality
         _mealRemindersEnabled = false;
         await _settingsService.saveMealRemindersEnabled(false);
         _d('loadSettings — OS permission revoked, preference cleared');
@@ -47,10 +45,6 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Enables or disables meal reminders.
-  /// Returns [true] if the change was applied.
-  /// Returns [false] if the OS permission was denied or scheduling failed —
-  /// caller should prompt user to open Settings.
   Future<bool> setMealRemindersEnabled(bool value) async {
     _d('setMealRemindersEnabled → $value');
     try {

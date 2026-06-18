@@ -6,8 +6,6 @@ import '../../../core/services/api_client.dart';
 import '../services/food_service.dart';
 import 'log_portion_screen.dart';
 
-/// Activates the camera barcode scanner, calls GET /food/barcode/{code},
-/// then navigates to LogPortionScreen on a successful lookup.
 class BarcodeScanScreen extends StatefulWidget {
   const BarcodeScanScreen({super.key});
 
@@ -92,7 +90,6 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
             controller: _controller,
             onDetect: _onDetect,
           ),
-          // Viewfinder overlay
           Center(
             child: Container(
               width: 260,
@@ -103,7 +100,6 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
               ),
             ),
           ),
-          // Bottom label
           Positioned(
             left: 0,
             right: 0,

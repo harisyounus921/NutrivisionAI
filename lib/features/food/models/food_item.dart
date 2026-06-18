@@ -9,7 +9,6 @@ class FoodItem {
     required this.fatG,
   });
 
-  /// UUID from the backend; null for local seed entries.
   final String? id;
   final String name;
   final String servingDescription;

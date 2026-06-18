@@ -8,7 +8,6 @@ extension ActivitySourceLabel on ActivitySource {
       };
 }
 
-/// A single logged activity entry, with totals already scaled by [sessions].
 class ActivityLog {
   const ActivityLog({
     required this.id,

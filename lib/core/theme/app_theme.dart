@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Central design system: "Fresh Mint & Teal" — an emerald/teal palette with
-/// a warm amber accent for badges, streaks, and other highlights.
-///
-/// [light] wires the palette into a full [ThemeData] so every screen picks
-/// up consistent colors, typography (Poppins for headings, Nunito for body),
-/// rounded cards/buttons/inputs, and a soft mint surface without per-screen
-/// styling.
 class AppTheme {
   AppTheme._();
 
@@ -15,7 +8,6 @@ class AppTheme {
   static const Color secondary = Color(0xFF0E7C66);
   static const Color accent = Color(0xFFFFB74D);
 
-  /// Emerald → teal gradient used for hero/header sections across screens.
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -25,8 +17,6 @@ class AppTheme {
   static const double cardRadius = 20;
   static const double fieldRadius = 16;
 
-  /// Shared macro accent colors, used for icons/highlights wherever protein,
-  /// carbs, or fat are broken out individually (Home, Food, Dashboard).
   static const Color proteinColor = Color(0xFF0E7C66);
   static const Color carbsColor = Color(0xFFFFB74D);
   static const Color fatColor = Color(0xFFEF6C75);

@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/achievement.dart';
 
-/// Local seed list of badges (UC-10). Progress and unlock state are computed
-/// on the fly from meal logs, activity logs, and the user's profile —
-/// see [AchievementService].
 const List<Achievement> achievementDatabase = [
   Achievement(
     id: 'first_log',

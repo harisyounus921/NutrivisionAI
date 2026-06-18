@@ -8,10 +8,6 @@ import '../../home/screens/main_shell.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 
-/// Collects biometrics, activity level, goal, and dietary preferences.
-///
-/// Used both for first-time setup (after registration/login) and for
-/// editing an existing profile, when [existingProfile] is provided.
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key, this.existingProfile});
 

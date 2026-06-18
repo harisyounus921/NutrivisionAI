@@ -35,8 +35,6 @@ class HealthDeviceService {
     }
   }
 
-  /// Returns true if the user already granted permissions in a previous session.
-  /// Avoids showing the Health Connect dialog on every app restart.
   static Future<bool> wasPermissionGranted() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_prefsKey) ?? false;
@@ -47,7 +45,6 @@ class HealthDeviceService {
     await prefs.setBool(_prefsKey, value);
   }
 
-  /// Android only: checks whether Health Connect is installed and ready.
   static Future<HealthConnectAvailability> checkAndroidAvailability() async {
     if (!Platform.isAndroid) return HealthConnectAvailability.available;
     try {
@@ -66,7 +63,6 @@ class HealthDeviceService {
     }
   }
 
-  /// Opens Health Connect so the user can manage permissions.
   static Future<void> openHealthConnectSettings() async {
     if (!Platform.isAndroid) return;
     try {
@@ -76,7 +72,6 @@ class HealthDeviceService {
     }
   }
 
-  /// Opens Health Connect install page on Play Store.
   static Future<void> installOrOpenHealthConnect() async {
     if (!Platform.isAndroid) return;
     try {
@@ -86,8 +81,6 @@ class HealthDeviceService {
     }
   }
 
-  /// Requests read permissions from Health Connect / Apple Health.
-  /// Saves the result so we never show the dialog again once granted.
   static Future<bool> requestPermissions() async {
     try {
       final permissions = _types.map((_) => HealthDataAccess.READ).toList();
@@ -103,12 +96,9 @@ class HealthDeviceService {
     }
   }
 
-  /// Clears the stored permission flag (e.g. when the user revokes from system settings).
   static Future<void> clearPermissionCache() async {
     await _savePermissionGranted(false);
   }
-
-  // ── Last sync persistence ──────────────────────────────────────────────────
 
   static const _lastSyncTimeKey = 'health_last_sync_time';
   static const _lastSyncResultKey = 'health_last_sync_result';
@@ -149,8 +139,6 @@ class HealthDeviceService {
     await prefs.remove(_lastSyncCaloriesKey);
   }
 
-  /// Reads today's steps, calories burned, and active minutes from the device.
-  /// Returns null if the read fails (e.g. permissions revoked).
   static Future<DeviceHealthData?> readToday() async {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
@@ -179,7 +167,6 @@ class HealthDeviceService {
       return result;
     } catch (e) {
       _log('readToday error: $e');
-      // If read fails, the permission may have been revoked — clear the cache
       await _savePermissionGranted(false);
       return null;
     }

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// What kind of running total an [Achievement]'s [Achievement.target] is
-/// measured against.
 enum AchievementType { mealCount, activityCount, streak, goalHit }
 
-/// A badge definition: unlocked once the user's progress for [type] reaches
-/// [target].
 class Achievement {
   const Achievement({
     required this.id,

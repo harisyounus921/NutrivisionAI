@@ -14,10 +14,6 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Thin HTTP wrapper around the NutriVision backend.
-///
-/// All requests inject the stored access token. On 401 it attempts one silent
-/// refresh before propagating an [ApiException].
 class ApiClient {
   ApiClient({SessionService? sessionService, http.Client? httpClient})
       : _session = sessionService ?? SessionService(),
@@ -28,10 +24,6 @@ class ApiClient {
 
   final SessionService _session;
   final http.Client _http;
-
-  // ---------------------------------------------------------------------------
-  // Public verbs
-  // ---------------------------------------------------------------------------
 
   Future<dynamic> get(String path, {Map<String, String>? query}) =>
       _request('GET', path, query: query);
@@ -81,10 +73,6 @@ class ApiClient {
     return _parse(response, path);
   }
 
-  // ---------------------------------------------------------------------------
-  // Core
-  // ---------------------------------------------------------------------------
-
   Future<dynamic> _request(
     String method,
     String path, {
@@ -112,7 +100,6 @@ class ApiClient {
         _log('✗ Refresh failed for $method $path — session expired');
         throw const ApiException('Session expired. Please log in again.');
       }
-      // No token sent — let backend's error through (e.g., wrong password on login).
       _log('⚠ 401 on $method $path (no token sent) — passing backend error through');
       return _parse(response, path);
     }
@@ -207,10 +194,6 @@ class ApiClient {
 
     return json['data'];
   }
-
-  // ---------------------------------------------------------------------------
-  // Logging helpers — debug builds only
-  // ---------------------------------------------------------------------------
 
   static void _log(String message) {
     if (kDebugMode) {

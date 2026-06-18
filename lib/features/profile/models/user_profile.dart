@@ -22,7 +22,6 @@ extension ActivityLevelLabel on ActivityLevel {
         ActivityLevel.veryActive => 'Very active (hard exercise / physical job)',
       };
 
-  /// Multiplier applied to BMR to estimate total daily energy expenditure.
   double get multiplier => switch (this) {
         ActivityLevel.sedentary => 1.2,
         ActivityLevel.light => 1.375,
@@ -39,7 +38,6 @@ extension DietGoalLabel on DietGoal {
         DietGoal.gain => 'Gain muscle',
       };
 
-  /// Daily calorie adjustment applied on top of TDEE for this goal.
   int get calorieAdjustment => switch (this) {
         DietGoal.lose => -500,
         DietGoal.maintain => 0,
@@ -77,16 +75,13 @@ class UserProfile {
   final DietaryPreference dietaryPreference;
   final List<String> allergies;
 
-  /// Basal Metabolic Rate via the Mifflin-St Jeor equation.
   double get bmr {
     final base = 10 * weightKg + 6.25 * heightCm - 5 * age;
     return gender == Gender.male ? base + 5 : base - 161;
   }
 
-  /// Total Daily Energy Expenditure: BMR adjusted for activity level.
   double get tdee => bmr * activityLevel.multiplier;
 
-  /// Suggested daily calorie target based on TDEE and the user's goal.
   int get dailyCalorieGoal => (tdee + goal.calorieAdjustment).round();
 
   Map<String, dynamic> toJson() => {

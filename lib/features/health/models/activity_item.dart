@@ -1,6 +1,3 @@
-/// An activity and its estimated calorie burn/step count for one typical
-/// session, used as a quick-add seed list until Google Fit/Apple Health
-/// sync is wired up.
 class ActivityItem {
   const ActivityItem({
     required this.name,

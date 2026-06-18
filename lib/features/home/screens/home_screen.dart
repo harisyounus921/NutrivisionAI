@@ -32,7 +32,6 @@ String _formatToday() {
   return '${_weekdayNames[now.weekday - 1]}, ${now.day} ${_monthNames[now.month - 1]}';
 }
 
-/// Home tab: today's calorie/macro summary and meal log.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 

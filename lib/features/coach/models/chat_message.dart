@@ -1,6 +1,5 @@
 enum ChatRole { user, coach }
 
-/// A single message in the AI diet coach conversation.
 class ChatMessage {
   const ChatMessage({
     required this.id,

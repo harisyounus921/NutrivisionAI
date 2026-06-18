@@ -6,7 +6,6 @@ import 'package:ai_diet/main.dart';
 
 void main() {
   setUpAll(() {
-    // Avoid network font fetches during tests.
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 

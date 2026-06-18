@@ -1,11 +1,6 @@
 import '../../../core/services/api_client.dart';
 import '../models/user_profile.dart';
 
-// ---------------------------------------------------------------------------
-// Enum <-> API string mappings
-// The backend uses snake_case values that differ from our local enum names.
-// ---------------------------------------------------------------------------
-
 extension _ActivityLevelApi on ActivityLevel {
   String get apiValue => switch (this) {
         ActivityLevel.sedentary => 'sedentary',
@@ -52,8 +47,6 @@ DietaryPreference _prefFromApiList(List<dynamic> list) {
   return DietaryPreference.none;
 }
 
-// ---------------------------------------------------------------------------
-
 class ProfileService {
   ProfileService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
@@ -71,7 +64,6 @@ class ProfileService {
       final activityLevel = data['activityLevel'];
       final goal = data['goal'];
 
-      // If any required field is missing, profile isn't set up yet.
       if (age == null || gender == null || heightCm == null || weightKg == null) {
         return null;
       }
@@ -107,7 +99,5 @@ class ProfileService {
   }
 
   Future<void> clearProfile() async {
-    // Profile is owned by the backend; local-only clear is a no-op here.
-    // Full deletion goes through DELETE /settings/account.
   }
 }

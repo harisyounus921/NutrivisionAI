@@ -14,10 +14,6 @@ class ActivityLogProvider extends ChangeNotifier {
   List<ActivityLog> _logs = [];
   bool _isLoading = false;
 
-  // Latest totals synced from the device (Health Connect / Apple Health). These
-  // are NOT stored as ActivityLog entries, so they're kept here and folded into
-  // today's totals — otherwise a sync (e.g. 197 steps) would show in the synced
-  // banner/summary but the "Today's Steps" card would still read 0.
   int _deviceSteps = 0;
   double _deviceCaloriesBurned = 0;
   DateTime? _deviceDataDate;
@@ -39,9 +35,6 @@ class ActivityLogProvider extends ChangeNotifier {
       todayLogs.fold(0, (total, log) => total + log.steps) +
       (_deviceDataIsToday ? _deviceSteps : 0);
 
-  /// Records the latest device-synced totals so today's steps/burned reflect a
-  /// sync even though sync data isn't persisted as [ActivityLog] entries.
-  /// [date] defaults to now; data is only counted while it's still today.
   void setDeviceData({
     required int steps,
     required double caloriesBurned,
