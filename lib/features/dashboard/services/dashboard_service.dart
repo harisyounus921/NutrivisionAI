@@ -27,8 +27,12 @@ class DailyData {
   final double netCalories;
 
   factory DailyData.fromJson(Map<String, dynamic> json) {
-    final totals = json['totals'] as Map<String, dynamic>? ?? {};
-    final goals = json['goals'] as Map<String, dynamic>? ?? {};
+    final totals = Map<String, dynamic>.from(
+      json['totals'] as Map<dynamic, dynamic>? ?? {},
+    );
+    final goals = Map<String, dynamic>.from(
+      json['goals'] as Map<dynamic, dynamic>? ?? {},
+    );
     return DailyData(
       calories: (totals['calories'] as num? ?? 0).toDouble(),
       protein: (totals['protein'] as num? ?? 0).toDouble(),
