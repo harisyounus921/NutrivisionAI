@@ -1,5 +1,5 @@
 name: meal_nudge
-description: "A Diet project."
+description: "AI meal & calorie tracker"
 publish_to: 'none'
 version: 1.0.0+2
 
