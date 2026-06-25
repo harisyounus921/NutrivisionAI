@@ -75,60 +75,26 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: _LoginIntroPanel(),
+              ),
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 48, 24, 36),
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.eco_rounded,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ).animate().scale(
-                      duration: 500.ms,
-                      curve: Curves.elasticOut,
+                margin: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.ink.withValues(alpha: 0.06),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                          'MealNudge',
-                          style: textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                          ),
-                          textAlign: TextAlign.center,
-                        )
-                        .animate()
-                        .fadeIn(delay: 150.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 6),
-                    Text(
-                          'Welcome back — let\'s keep your streak going',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.85),
-                          ),
-                          textAlign: TextAlign.center,
-                        )
-                        .animate()
-                        .fadeIn(delay: 250.ms, duration: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
                   ],
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -251,5 +217,63 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+}
+
+class _LoginIntroPanel extends StatelessWidget {
+  const _LoginIntroPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              gradient: AppTheme.heroGradient,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.bolt_rounded,
+              color: Colors.white,
+              size: 30,
+            ),
+          ).animate().scale(duration: 450.ms, curve: Curves.easeOutBack),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MealNudge',
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Smart nudges for meals, macros, and progress.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.06, end: 0);
   }
 }

@@ -38,14 +38,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       await context.read<AuthProvider>().register(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
       return;
     }
@@ -66,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isLoading = context.watch<AuthProvider>().isLoading;
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -77,12 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-                decoration: const BoxDecoration(
-                  gradient: AppTheme.heroGradient,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
+                margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                  border: Border.all(color: colorScheme.outlineVariant),
                 ),
                 child: Column(
                   children: [
@@ -90,30 +93,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: colorScheme.primary,
+                          ),
                         ),
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      width: 58,
+                      height: 58,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
+                        gradient: AppTheme.heroGradient,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.person_add_alt_1_rounded, size: 40, color: Colors.white),
-                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                      child: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        size: 32,
+                        color: Colors.white,
+                      ),
+                    ).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
                     const SizedBox(height: 12),
                     Text(
-                      'Create your account',
-                      style: textTheme.headlineSmall?.copyWith(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'Create your account',
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 150.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 6),
                     Text(
-                      'Start tracking meals, activity, and progress',
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'Start tracking meals, activity, and progress',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 250.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ],
                 ),
               ),
@@ -125,76 +149,108 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name',
-                          prefixIcon: Icon(Icons.person_outline),
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty) ? 'Enter your name' : null,
-                      ).animate().fadeIn(delay: 100.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Enter your email';
-                          }
-                          if (!value.contains('@')) return 'Enter a valid email';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 150.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: Icon(Icons.person_outline),
                             ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
-                            },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Enter a password';
-                          if (value.length < 6) return 'Password must be at least 6 characters';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 200.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                            validator: (value) =>
+                                (value == null || value.trim().isEmpty)
+                                ? 'Enter your name'
+                                : null,
+                          )
+                          .animate()
+                          .fadeIn(delay: 100.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: _confirmPasswordController,
-                        obscureText: _obscurePassword,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirm Password',
-                          prefixIcon: Icon(Icons.lock_outline),
-                        ),
-                        validator: (value) {
-                          if (value != _passwordController.text) return 'Passwords do not match';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter your email';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Enter a valid email';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 150.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  );
+                                },
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Enter a password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 200.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscurePassword,
+                            decoration: const InputDecoration(
+                              labelText: 'Confirm Password',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                            validator: (value) {
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 250.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 28),
                       FilledButton(
-                        onPressed: isLoading ? null : _submit,
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Create Account'),
-                      ).animate().fadeIn(delay: 325.ms, duration: 350.ms).slideY(begin: 0.1, end: 0),
+                            onPressed: isLoading ? null : _submit,
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Create Account'),
+                          )
+                          .animate()
+                          .fadeIn(delay: 325.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0),
                     ],
                   ),
                 ),

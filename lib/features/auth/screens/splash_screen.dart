@@ -50,58 +50,75 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  shape: BoxShape.circle,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 360),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+              border: Border.all(color: colorScheme.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.ink.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 14),
                 ),
-                child: const Icon(
-                  Icons.eco_rounded,
-                  size: 64,
-                  color: Colors.white,
-                ),
-              ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
-              const SizedBox(height: 24),
-              Text(
-                    'MealNudge',
-                    style: textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(delay: 200.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 8),
-              Text(
-                    'Your AI-powered diet coach',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  )
-                  .animate()
-                  .fadeIn(delay: 350.ms, duration: 500.ms)
-                  .slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 48),
-              const SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  color: Colors.white,
-                ),
-              ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
-            ],
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.heroGradient,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: const Icon(
+                    Icons.bolt_rounded,
+                    size: 42,
+                    color: Colors.white,
+                  ),
+                ).animate().scale(duration: 560.ms, curve: Curves.easeOutBack),
+                const SizedBox(height: 22),
+                Text(
+                      'MealNudge',
+                      style: textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(delay: 180.ms, duration: 420.ms)
+                    .slideY(begin: 0.15, end: 0),
+                const SizedBox(height: 6),
+                Text(
+                      'AI meal guidance that stays out of your way.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                    .animate()
+                    .fadeIn(delay: 300.ms, duration: 420.ms)
+                    .slideY(begin: 0.15, end: 0),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: 120,
+                  child: LinearProgressIndicator(
+                    minHeight: 5,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ).animate().fadeIn(delay: 420.ms, duration: 360.ms),
+              ],
+            ),
           ),
         ),
       ),
