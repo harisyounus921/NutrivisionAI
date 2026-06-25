@@ -7,7 +7,7 @@ import '../services/meal_log_service.dart';
 
 class MealLogProvider extends ChangeNotifier {
   MealLogProvider({MealLogService? mealLogService})
-      : _mealLogService = mealLogService ?? MealLogService();
+    : _mealLogService = mealLogService ?? MealLogService();
 
   final MealLogService _mealLogService;
 
@@ -31,7 +31,9 @@ class MealLogProvider extends ChangeNotifier {
 
     return List.generate(7, (index) {
       final day = startOfToday.subtract(Duration(days: 6 - index));
-      final dayLogs = _logs.where((log) => _isSameDay(log.loggedAt, day)).toList();
+      final dayLogs = _logs
+          .where((log) => _isSameDay(log.loggedAt, day))
+          .toList();
       return (day, _sum(dayLogs, (log) => log.calories));
     });
   }
@@ -74,7 +76,7 @@ class MealLogProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·MealLog');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·MealLog');
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>

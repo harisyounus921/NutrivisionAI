@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.haris.nutrivision"
+    namespace = "com.haris.mealnudge"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.haris.nutrivision"
+        applicationId = "com.haris.mealnudge"
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

@@ -13,8 +13,8 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
   AuthProvider({SessionService? sessionService, AuthService? authService})
-      : _session = sessionService ?? SessionService(),
-        _authService = authService ?? AuthService();
+    : _session = sessionService ?? SessionService(),
+      _authService = authService ?? AuthService();
 
   final SessionService _session;
   final AuthService _authService;
@@ -110,7 +110,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Auth');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Auth');
   }
 
   void _setLoading(bool value) {

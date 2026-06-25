@@ -7,7 +7,7 @@ import '../services/profile_service.dart';
 
 class ProfileProvider extends ChangeNotifier {
   ProfileProvider({ProfileService? profileService})
-      : _profileService = profileService ?? ProfileService();
+    : _profileService = profileService ?? ProfileService();
 
   final ProfileService _profileService;
 
@@ -22,7 +22,9 @@ class ProfileProvider extends ChangeNotifier {
     _d('loadProfile — GET /profile');
     _setLoading(true);
     _profile = await _profileService.loadProfile();
-    _d('loadProfile — ${_profile != null ? 'found (age=${_profile!.age}, goal=${_profile!.goal.name})' : 'not set up yet'}');
+    _d(
+      'loadProfile — ${_profile != null ? 'found (age=${_profile!.age}, goal=${_profile!.goal.name})' : 'not set up yet'}',
+    );
     _setLoading(false);
   }
 
@@ -49,7 +51,7 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Profile');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Profile');
   }
 
   void _setLoading(bool value) {

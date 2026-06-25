@@ -1,4 +1,4 @@
-# Nutrivision AI (ai_diet)
+# MealNudge (meal_nudge)
 
 AI-powered diet monitoring app built with Flutter (Android/iOS). Automates
 meal logging via on-device food image recognition (TFLite) and barcode

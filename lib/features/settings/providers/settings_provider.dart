@@ -9,8 +9,8 @@ class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
     SettingsService? settingsService,
     NotificationController? notifications,
-  })  : _settingsService = settingsService ?? SettingsService(),
-        _notifications = notifications ?? defaultNotificationController;
+  }) : _settingsService = settingsService ?? SettingsService(),
+       _notifications = notifications ?? defaultNotificationController;
 
   final SettingsService _settingsService;
   final NotificationController _notifications;
@@ -71,6 +71,6 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Settings');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Settings');
   }
 }

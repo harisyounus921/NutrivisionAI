@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ai_diet/features/health/providers/activity_log_provider.dart';
+import 'package:meal_nudge/features/health/providers/activity_log_provider.dart';
 
 void main() {
   group('ActivityLogProvider device sync totals', () {

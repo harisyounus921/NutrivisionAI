@@ -53,7 +53,8 @@ class HealthDeviceService {
       if (status == HealthConnectSdkStatus.sdkAvailable) {
         return HealthConnectAvailability.available;
       }
-      if (status == HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
+      if (status ==
+          HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
         return HealthConnectAvailability.notInstalled;
       }
       return HealthConnectAvailability.notSupported;
@@ -84,7 +85,10 @@ class HealthDeviceService {
   static Future<bool> requestPermissions() async {
     try {
       final permissions = _types.map((_) => HealthDataAccess.READ).toList();
-      final granted = await _health.requestAuthorization(_types, permissions: permissions);
+      final granted = await _health.requestAuthorization(
+        _types,
+        permissions: permissions,
+      );
       _log('requestPermissions → $granted');
       if (granted) {
         await _savePermissionGranted(true);
@@ -117,8 +121,10 @@ class HealthDeviceService {
     await prefs.setDouble(_lastSyncCaloriesKey, caloriesBurned);
   }
 
-  static Future<({DateTime? time, String? result, int steps, double caloriesBurned})>
-      loadLastSync() async {
+  static Future<
+    ({DateTime? time, String? result, int steps, double caloriesBurned})
+  >
+  loadLastSync() async {
     final prefs = await SharedPreferences.getInstance();
     final timeStr = prefs.getString(_lastSyncTimeKey);
     final result = prefs.getString(_lastSyncResultKey);
@@ -154,7 +160,8 @@ class HealthDeviceService {
       final deduped = _health.removeDuplicates(points);
       final calories = deduped.fold<double>(
         0,
-        (sum, p) => sum + (p.value as NumericHealthValue).numericValue.toDouble(),
+        (sum, p) =>
+            sum + (p.value as NumericHealthValue).numericValue.toDouble(),
       );
       final activeMinutes = calories > 0 ? (calories / 3.5).round() : 0;
 
@@ -163,7 +170,9 @@ class HealthDeviceService {
         caloriesBurned: calories,
         activeMinutes: activeMinutes,
       );
-      _log('readToday — steps: $steps, cal: ${calories.toStringAsFixed(0)}, active: ${activeMinutes}min');
+      _log(
+        'readToday — steps: $steps, cal: ${calories.toStringAsFixed(0)}, active: ${activeMinutes}min',
+      );
       return result;
     } catch (e) {
       _log('readToday error: $e');
@@ -173,6 +182,6 @@ class HealthDeviceService {
   }
 
   static void _log(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·HealthSync');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·HealthSync');
   }
 }

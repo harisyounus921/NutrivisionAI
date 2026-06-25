@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Nutrivision</string>
+	<string>MealNudge</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Nutrivision</string>
+	<string>MealNudge</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -36,17 +36,17 @@
 		<false/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Nutrivision uses the camera to scan barcodes and recognize food from photos.</string>
+	<string>MealNudge uses the camera to scan barcodes and recognize food from photos.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Nutrivision reads your steps and calories burned from Apple Health to give you an accurate net calorie balance.</string>
+	<string>MealNudge reads your steps and calories burned from Apple Health to give you an accurate net calorie balance.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Nutrivision may write workout data to Apple Health when you log activities.</string>
+	<string>MealNudge may write workout data to Apple Health when you log activities.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Nutrivision uses the microphone when recording video for food recognition.</string>
+	<string>MealNudge uses the microphone when recording video for food recognition.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Nutrivision may save food recognition results to your photo library.</string>
+	<string>MealNudge may save food recognition results to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Nutrivision needs access to your photo library to pick food images for recognition.</string>
+	<string>MealNudge needs access to your photo library to pick food images for recognition.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -7,7 +7,7 @@ import '../services/activity_log_service.dart';
 
 class ActivityLogProvider extends ChangeNotifier {
   ActivityLogProvider({ActivityLogService? activityLogService})
-      : _activityLogService = activityLogService ?? ActivityLogService();
+    : _activityLogService = activityLogService ?? ActivityLogService();
 
   final ActivityLogService _activityLogService;
 
@@ -43,7 +43,9 @@ class ActivityLogProvider extends ChangeNotifier {
     _deviceSteps = steps;
     _deviceCaloriesBurned = caloriesBurned;
     _deviceDataDate = date ?? DateTime.now();
-    _d('setDeviceData — $steps steps, ${caloriesBurned.toStringAsFixed(0)} kcal');
+    _d(
+      'setDeviceData — $steps steps, ${caloriesBurned.toStringAsFixed(0)} kcal',
+    );
     notifyListeners();
   }
 
@@ -54,7 +56,9 @@ class ActivityLogProvider extends ChangeNotifier {
 
     try {
       _logs = await _activityLogService.loadLogs();
-      _d('loadLogs — loaded ${_logs.length} logs (${todayLogs.length} today, $todaySteps steps)');
+      _d(
+        'loadLogs — loaded ${_logs.length} logs (${todayLogs.length} today, $todaySteps steps)',
+      );
     } catch (e) {
       _d('loadLogs — error: $e');
       _logs = [];
@@ -65,14 +69,22 @@ class ActivityLogProvider extends ChangeNotifier {
   }
 
   Future<void> addLog(ActivityLog log) async {
-    _d('addLog — "${log.activityName}" ${log.caloriesBurned.toStringAsFixed(0)} kcal, ${log.steps} steps');
+    _d(
+      'addLog — "${log.activityName}" ${log.caloriesBurned.toStringAsFixed(0)} kcal, ${log.steps} steps',
+    );
     _logs = [..._logs, log];
     await _activityLogService.saveLogs(_logs);
     notifyListeners();
 
-    final day = DateTime(log.loggedAt.year, log.loggedAt.month, log.loggedAt.day);
+    final day = DateTime(
+      log.loggedAt.year,
+      log.loggedAt.month,
+      log.loggedAt.day,
+    );
     final dayLogs = _logs.where((l) => _isSameDay(l.loggedAt, day)).toList();
-    _d('addLog — fire-and-forget POST /health/sync for ${day.toIso8601String().substring(0, 10)}');
+    _d(
+      'addLog — fire-and-forget POST /health/sync for ${day.toIso8601String().substring(0, 10)}',
+    );
     _activityLogService.syncDay(day, dayLogs).ignore();
   }
 
@@ -83,19 +95,27 @@ class ActivityLogProvider extends ChangeNotifier {
     await _activityLogService.saveLogs(_logs);
     notifyListeners();
 
-    final day = DateTime(removed.loggedAt.year, removed.loggedAt.month, removed.loggedAt.day);
+    final day = DateTime(
+      removed.loggedAt.year,
+      removed.loggedAt.month,
+      removed.loggedAt.day,
+    );
     final dayLogs = _logs.where((l) => _isSameDay(l.loggedAt, day)).toList();
-    _d('removeLog — fire-and-forget POST /health/sync for ${day.toIso8601String().substring(0, 10)}');
+    _d(
+      'removeLog — fire-and-forget POST /health/sync for ${day.toIso8601String().substring(0, 10)}',
+    );
     _activityLogService.syncDay(day, dayLogs).ignore();
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Activity');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Activity');
   }
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  double _sum(List<ActivityLog> logs, double Function(ActivityLog log) selector) =>
-      logs.fold(0, (total, log) => total + selector(log));
+  double _sum(
+    List<ActivityLog> logs,
+    double Function(ActivityLog log) selector,
+  ) => logs.fold(0, (total, log) => total + selector(log));
 }

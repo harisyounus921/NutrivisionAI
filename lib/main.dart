@@ -26,11 +26,11 @@ void main() async {
   } catch (e, s) {
     debugPrint('HealthDeviceService.configure failed: $e\n$s');
   }
-  runApp(const NutrivisionApp());
+  runApp(const MealNudgeApp());
 }
 
-class NutrivisionApp extends StatelessWidget {
-  const NutrivisionApp({super.key});
+class MealNudgeApp extends StatelessWidget {
+  const MealNudgeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class NutrivisionApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Nutrivision AI',
+        title: 'MealNudge',
         theme: AppTheme.light,
         home: const SplashScreen(),
       ),

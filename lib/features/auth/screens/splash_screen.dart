@@ -40,7 +40,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
     Navigator.of(context).pushReplacement(
       AppPageRoute(
-        builder: (context) => isAuthenticated ? postAuthDestination(context) : const LoginScreen(),
+        builder: (context) => isAuthenticated
+            ? postAuthDestination(context)
+            : const LoginScreen(),
       ),
     );
   }
@@ -64,23 +66,40 @@ class _SplashScreenState extends State<SplashScreen> {
                   color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.eco_rounded, size: 64, color: Colors.white),
+                child: const Icon(
+                  Icons.eco_rounded,
+                  size: 64,
+                  color: Colors.white,
+                ),
               ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
               const SizedBox(height: 24),
               Text(
-                'Nutrivision AI',
-                style: textTheme.headlineMedium?.copyWith(color: Colors.white),
-              ).animate().fadeIn(delay: 200.ms, duration: 500.ms).slideY(begin: 0.2, end: 0),
+                    'MealNudge',
+                    style: textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 500.ms)
+                  .slideY(begin: 0.2, end: 0),
               const SizedBox(height: 8),
               Text(
-                'Your AI-powered diet coach',
-                style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-              ).animate().fadeIn(delay: 350.ms, duration: 500.ms).slideY(begin: 0.2, end: 0),
+                    'Your AI-powered diet coach',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(delay: 350.ms, duration: 500.ms)
+                  .slideY(begin: 0.2, end: 0),
               const SizedBox(height: 48),
               const SizedBox(
                 width: 28,
                 height: 28,
-                child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
               ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
             ],
           ),

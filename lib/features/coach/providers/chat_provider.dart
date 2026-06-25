@@ -8,7 +8,7 @@ import '../services/coach_response_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   ChatProvider({ChatService? chatService})
-      : _chatService = chatService ?? ChatService();
+    : _chatService = chatService ?? ChatService();
 
   final ChatService _chatService;
 
@@ -42,11 +42,18 @@ class ChatProvider extends ChangeNotifier {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
-    _d('sendMessage — POST /coach/chat: "${trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed}"');
+    _d(
+      'sendMessage — POST /coach/chat: "${trimmed.length > 60 ? '${trimmed.substring(0, 60)}…' : trimmed}"',
+    );
 
     _messages = [
       ..._messages,
-      ChatMessage(id: _generateId(), role: ChatRole.user, text: trimmed, sentAt: DateTime.now()),
+      ChatMessage(
+        id: _generateId(),
+        role: ChatRole.user,
+        text: trimmed,
+        sentAt: DateTime.now(),
+      ),
     ];
     _isReplying = true;
     notifyListeners();
@@ -60,7 +67,9 @@ class ChatProvider extends ChangeNotifier {
         conversationId: conversationId,
       );
       await _chatService.saveConversationId(result.conversationId);
-      _d('sendMessage — reply received (${result.reply.length} chars), conversationId: ${result.conversationId}');
+      _d(
+        'sendMessage — reply received (${result.reply.length} chars), conversationId: ${result.conversationId}',
+      );
 
       _messages = [
         ..._messages,
@@ -78,7 +87,8 @@ class ChatProvider extends ChangeNotifier {
         ChatMessage(
           id: _generateId(),
           role: ChatRole.coach,
-          text: 'Sorry, I couldn\'t reach the coach right now. Please try again.',
+          text:
+              'Sorry, I couldn\'t reach the coach right now. Please try again.',
           sentAt: DateTime.now(),
         ),
       ];
@@ -90,16 +100,17 @@ class ChatProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Coach');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Coach');
   }
 
   ChatMessage _welcomeMessage() => ChatMessage(
-        id: _generateId(),
-        role: ChatRole.coach,
-        text: "Hi! I'm your AI diet coach. Ask me about your calories, macros, or what to "
-            "eat next, and I'll tailor it to your profile and today's log.",
-        sentAt: DateTime.now(),
-      );
+    id: _generateId(),
+    role: ChatRole.coach,
+    text:
+        "Hi! I'm your AI diet coach. Ask me about your calories, macros, or what to "
+        "eat next, and I'll tailor it to your profile and today's log.",
+    sentAt: DateTime.now(),
+  );
 
   String _generateId() => DateTime.now().microsecondsSinceEpoch.toString();
 }

@@ -44,16 +44,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Notifications blocked'),
         content: Text(
           isAndroid
-              ? 'Notifications are disabled for Nutrivision AI.\n\n'
-                  'To enable them:\n'
-                  '1. Open Android Settings\n'
-                  '2. Apps → Nutrivision AI\n'
-                  '3. Notifications → Allow'
-              : 'Notifications are disabled for Nutrivision AI.\n\n'
-                  'To enable them:\n'
-                  '1. Open iPhone Settings\n'
-                  '2. Nutrivision → Notifications\n'
-                  '3. Allow Notifications → On',
+              ? 'Notifications are disabled for MealNudge.\n\n'
+                    'To enable them:\n'
+                    '1. Open Android Settings\n'
+                    '2. Apps → MealNudge\n'
+                    '3. Notifications → Allow'
+              : 'Notifications are disabled for MealNudge.\n\n'
+                    'To enable them:\n'
+                    '1. Open iPhone Settings\n'
+                    '2. MealNudge → Notifications\n'
+                    '3. Allow Notifications → On',
         ),
         actions: [
           TextButton(
@@ -68,7 +68,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _editProfile() async {
     final profile = context.read<ProfileProvider>().profile;
     await Navigator.of(context).push(
-      AppPageRoute(builder: (_) => ProfileSetupScreen(existingProfile: profile)),
+      AppPageRoute(
+        builder: (_) => ProfileSetupScreen(existingProfile: profile),
+      ),
     );
   }
 
@@ -120,7 +122,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: Theme.of(dialogContext).colorScheme.error),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Delete'),
           ),
@@ -189,7 +193,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   CircleAvatar(
                     radius: 28,
                     backgroundColor: Colors.white.withValues(alpha: 0.22),
-                    child: const Icon(Icons.person, color: Colors.white, size: 28),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -197,13 +205,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user?.name.isNotEmpty == true ? user!.name : 'Account',
-                          style: textTheme.titleLarge?.copyWith(color: Colors.white),
+                          user?.name.isNotEmpty == true
+                              ? user!.name
+                              : 'Account',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           user?.email ?? '',
-                          style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
                         ),
                       ],
                     ),
@@ -213,77 +227,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.06, end: 0),
             const SizedBox(height: 20),
             _SettingsSection(
-              title: 'Profile',
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined),
-                  title: const Text('Edit profile'),
-                  subtitle: Text(profile == null ? 'Set up your profile' : 'Goal: ${profile.goal.label}'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _editProfile,
-                ),
-              ],
-            ).animate().fadeIn(delay: 50.ms, duration: 300.ms).slideY(begin: 0.06, end: 0),
+                  title: 'Profile',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.edit_outlined),
+                      title: const Text('Edit profile'),
+                      subtitle: Text(
+                        profile == null
+                            ? 'Set up your profile'
+                            : 'Goal: ${profile.goal.label}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _editProfile,
+                    ),
+                  ],
+                )
+                .animate()
+                .fadeIn(delay: 50.ms, duration: 300.ms)
+                .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 12),
             _SettingsSection(
-              title: 'Preferences',
-              children: [
-                SwitchListTile(
-                  secondary: const Icon(Icons.notifications_outlined),
-                  title: const Text('Daily meal reminders'),
-                  subtitle: Text(
-                    settings.mealRemindersEnabled
-                        ? 'Reminders at 8:00 AM, 1:00 PM and 7:00 PM'
-                        : 'Tap to enable breakfast, lunch & dinner reminders',
-                  ),
-                  value: settings.mealRemindersEnabled,
-                  onChanged: (value) async {
-                    try {
-                      final applied = await context.read<SettingsProvider>().setMealRemindersEnabled(value);
-                      if (!applied && value && mounted) {
-                        _showNotificationPermissionDialog();
-                      }
-                    } catch (_) {
-                      if (value && mounted) _showNotificationPermissionDialog();
-                    }
-                  },
-                ),
-              ],
-            ).animate().fadeIn(delay: 100.ms, duration: 300.ms).slideY(begin: 0.06, end: 0),
+                  title: 'Preferences',
+                  children: [
+                    SwitchListTile(
+                      secondary: const Icon(Icons.notifications_outlined),
+                      title: const Text('Daily meal reminders'),
+                      subtitle: Text(
+                        settings.mealRemindersEnabled
+                            ? 'Reminders at 8:00 AM, 1:00 PM and 7:00 PM'
+                            : 'Tap to enable breakfast, lunch & dinner reminders',
+                      ),
+                      value: settings.mealRemindersEnabled,
+                      onChanged: (value) async {
+                        try {
+                          final applied = await context
+                              .read<SettingsProvider>()
+                              .setMealRemindersEnabled(value);
+                          if (!applied && value && mounted) {
+                            _showNotificationPermissionDialog();
+                          }
+                        } catch (_) {
+                          if (value && mounted) {
+                            _showNotificationPermissionDialog();
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                )
+                .animate()
+                .fadeIn(delay: 100.ms, duration: 300.ms)
+                .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 12),
             _SettingsSection(
-              title: 'Data',
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.download_outlined),
-                  title: const Text('Export my data'),
-                  subtitle: const Text('View and copy your profile, logs, and chat history as JSON'),
-                  onTap: _exportData,
-                ),
-                ListTile(
-                  leading: Icon(Icons.delete_outline, color: colorScheme.error),
-                  title: Text('Delete all data', style: TextStyle(color: colorScheme.error)),
-                  subtitle: const Text('Erase all locally stored data and log out'),
-                  onTap: _deleteAllData,
-                ),
-              ],
-            ).animate().fadeIn(delay: 150.ms, duration: 300.ms).slideY(begin: 0.06, end: 0),
+                  title: 'Data',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.download_outlined),
+                      title: const Text('Export my data'),
+                      subtitle: const Text(
+                        'View and copy your profile, logs, and chat history as JSON',
+                      ),
+                      onTap: _exportData,
+                    ),
+                    ListTile(
+                      leading: Icon(
+                        Icons.delete_outline,
+                        color: colorScheme.error,
+                      ),
+                      title: Text(
+                        'Delete all data',
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                      subtitle: const Text(
+                        'Erase all locally stored data and log out',
+                      ),
+                      onTap: _deleteAllData,
+                    ),
+                  ],
+                )
+                .animate()
+                .fadeIn(delay: 150.ms, duration: 300.ms)
+                .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 12),
             _SettingsSection(
-              title: 'Session',
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text('Log out'),
-                  onTap: _logout,
-                ),
-              ],
-            ).animate().fadeIn(delay: 200.ms, duration: 300.ms).slideY(begin: 0.06, end: 0),
+                  title: 'Session',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Log out'),
+                      onTap: _logout,
+                    ),
+                  ],
+                )
+                .animate()
+                .fadeIn(delay: 200.ms, duration: 300.ms)
+                .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 20),
             Center(
               child: Text(
-                'Nutrivision AI v1.0.0',
-                style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                'MealNudge v1.0.0',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ).animate().fadeIn(delay: 250.ms, duration: 300.ms),
           ],
@@ -313,9 +359,9 @@ class _SettingsSection extends StatelessWidget {
             child: Text(
               title,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           for (var i = 0; i < children.length; i++) ...[

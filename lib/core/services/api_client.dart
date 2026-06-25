@@ -16,11 +16,11 @@ class ApiException implements Exception {
 
 class ApiClient {
   ApiClient({SessionService? sessionService, http.Client? httpClient})
-      : _session = sessionService ?? SessionService(),
-        _http = httpClient ?? http.Client();
+    : _session = sessionService ?? SessionService(),
+      _http = httpClient ?? http.Client();
 
   static const _baseUrl = 'https://ai-diet-backend-y5ks.onrender.com/api';
-  static const _tag = 'NutriVision·API';
+  static const _tag = 'MealNudge·API';
 
   final SessionService _session;
   final http.Client _http;
@@ -45,11 +45,15 @@ class ApiClient {
     final token = await _session.getAccessToken();
     final uri = Uri.parse('$_baseUrl$path');
 
-    _log('→ POST (multipart) $path  [file: $filename, ${fileBytes.length} bytes]');
+    _log(
+      '→ POST (multipart) $path  [file: $filename, ${fileBytes.length} bytes]',
+    );
 
     final request = http.MultipartRequest('POST', uri)
       ..headers.addAll({if (token != null) 'Authorization': 'Bearer $token'})
-      ..files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: filename));
+      ..files.add(
+        http.MultipartFile.fromBytes(fileField, fileBytes, filename: filename),
+      );
 
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
@@ -62,7 +66,12 @@ class ApiClient {
         final refreshed = await _tryRefresh();
         if (refreshed) {
           _log('✓ Refresh succeeded — retrying POST $path');
-          return postMultipart(path, fileField: fileField, fileBytes: fileBytes, filename: filename);
+          return postMultipart(
+            path,
+            fileField: fileField,
+            fileBytes: fileBytes,
+            filename: filename,
+          );
         }
         _log('✗ Refresh failed for POST $path — session expired');
         throw const ApiException('Session expired. Please log in again.');
@@ -82,10 +91,20 @@ class ApiClient {
   }) async {
     final token = await _session.getAccessToken();
 
-    final queryStr = (query != null && query.isNotEmpty) ? '?${query.entries.map((e) => '${e.key}=${e.value}').join('&')}' : '';
-    _log('→ $method $path$queryStr${isRetry ? ' [retry]' : ''}${body != null ? '  body: ${_truncate(jsonEncode(body))}' : ''}');
+    final queryStr = (query != null && query.isNotEmpty)
+        ? '?${query.entries.map((e) => '${e.key}=${e.value}').join('&')}'
+        : '';
+    _log(
+      '→ $method $path$queryStr${isRetry ? ' [retry]' : ''}${body != null ? '  body: ${_truncate(jsonEncode(body))}' : ''}',
+    );
 
-    final response = await _send(method, path, token: token, query: query, body: body);
+    final response = await _send(
+      method,
+      path,
+      token: token,
+      query: query,
+      body: body,
+    );
 
     _log('← ${response.statusCode} $method $path${isRetry ? ' [retry]' : ''}');
 
@@ -95,12 +114,20 @@ class ApiClient {
         final refreshed = await _tryRefresh();
         if (refreshed) {
           _log('✓ Refresh succeeded — retrying $method $path');
-          return _request(method, path, query: query, body: body, isRetry: true);
+          return _request(
+            method,
+            path,
+            query: query,
+            body: body,
+            isRetry: true,
+          );
         }
         _log('✗ Refresh failed for $method $path — session expired');
         throw const ApiException('Session expired. Please log in again.');
       }
-      _log('⚠ 401 on $method $path (no token sent) — passing backend error through');
+      _log(
+        '⚠ 401 on $method $path (no token sent) — passing backend error through',
+      );
       return _parse(response, path);
     }
 
@@ -173,7 +200,9 @@ class ApiClient {
   dynamic _parse(http.Response response, [String? path]) {
     if (response.body.isEmpty) {
       if (response.statusCode >= 200 && response.statusCode < 300) return null;
-      _log('✗ Empty body with status ${response.statusCode}${path != null ? ' for $path' : ''}');
+      _log(
+        '✗ Empty body with status ${response.statusCode}${path != null ? ' for $path' : ''}',
+      );
       throw ApiException('HTTP ${response.statusCode}');
     }
 
@@ -181,7 +210,9 @@ class ApiClient {
     try {
       json = jsonDecode(response.body) as Map<String, dynamic>;
     } catch (_) {
-      _log('✗ Non-JSON response${path != null ? ' for $path' : ''}: ${_truncate(response.body)}');
+      _log(
+        '✗ Non-JSON response${path != null ? ' for $path' : ''}: ${_truncate(response.body)}',
+      );
       throw ApiException('Invalid response from server.');
     }
 

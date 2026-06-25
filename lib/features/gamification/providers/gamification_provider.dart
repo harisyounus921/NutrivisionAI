@@ -6,7 +6,7 @@ import '../services/gamification_service.dart';
 
 class GamificationProvider extends ChangeNotifier {
   GamificationProvider({GamificationService? gamificationService})
-      : _service = gamificationService ?? GamificationService();
+    : _service = gamificationService ?? GamificationService();
 
   final GamificationService _service;
 
@@ -21,7 +21,9 @@ class GamificationProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> load() async {
-    _d('load — GET /gamification/streak + /badges + /weekly-summary (parallel)');
+    _d(
+      'load — GET /gamification/streak + /badges + /weekly-summary (parallel)',
+    );
     _isLoading = true;
     notifyListeners();
 
@@ -35,7 +37,9 @@ class GamificationProvider extends ChangeNotifier {
       _badges = results[1] as List<BadgeData>;
       _weeklySummary = results[2] as WeeklySummary;
       final earned = _badges.where((b) => b.earned).length;
-      _d('load — streak: ${_streak?.current}d, badges: $earned/${_badges.length} earned');
+      _d(
+        'load — streak: ${_streak?.current}d, badges: $earned/${_badges.length} earned',
+      );
     } catch (e) {
       _d('load — error: $e (keeping stale data)');
     }
@@ -45,6 +49,6 @@ class GamificationProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Gamification');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Gamification');
   }
 }

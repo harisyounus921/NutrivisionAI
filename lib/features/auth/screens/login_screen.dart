@@ -36,13 +36,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await context.read<AuthProvider>().login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
       return;
     }
@@ -90,20 +93,37 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.eco_rounded, size: 48, color: Colors.white),
-                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
                     const SizedBox(height: 16),
                     Text(
-                      'Nutrivision AI',
-                      style: textTheme.headlineMedium?.copyWith(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'MealNudge',
+                          style: textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 150.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 6),
                     Text(
-                      'Welcome back — let\'s keep your streak going',
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'Welcome back — let\'s keep your streak going',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 250.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ],
                 ),
               ),
@@ -115,77 +135,109 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Enter your email';
-                          }
-                          if (!value.contains('@')) return 'Enter a valid email';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 100.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Enter your email';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Enter a valid email';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 100.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  );
+                                },
+                              ),
                             ),
-                            onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
                             },
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return 'Enter your password';
-                          if (value.length < 6) return 'Password must be at least 6 characters';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 175.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                          )
+                          .animate()
+                          .fadeIn(delay: 175.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () => Navigator.of(context).push(
-                            AppPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                            AppPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
                           ),
                           child: const Text('Forgot password?'),
                         ),
                       ).animate().fadeIn(delay: 225.ms, duration: 350.ms),
                       const SizedBox(height: 8),
                       FilledButton(
-                        onPressed: isLoading ? null : _submit,
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Log In'),
-                      ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.1, end: 0),
+                            onPressed: isLoading ? null : _submit,
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Log In'),
+                          )
+                          .animate()
+                          .fadeIn(delay: 250.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("Don't have an account?", style: textTheme.bodyMedium),
+                          Text(
+                            "Don't have an account?",
+                            style: textTheme.bodyMedium,
+                          ),
                           TextButton(
                             onPressed: () {
                               Navigator.of(context).push(
-                                AppPageRoute(builder: (_) => const RegisterScreen()),
+                                AppPageRoute(
+                                  builder: (_) => const RegisterScreen(),
+                                ),
                               );
                             },
                             child: Text(
                               'Sign Up',
-                              style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],

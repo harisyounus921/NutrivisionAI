@@ -10,7 +10,7 @@ import 'package:timezone/timezone.dart' as tz;
 class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
 
-  static const _channelId = 'nutrivision_meal_reminders';
+  static const _channelId = 'mealnudge_meal_reminders';
   static const _channelName = 'Meal Reminders';
   static const _channelDesc = 'Daily reminders to log your meals';
 
@@ -26,9 +26,21 @@ class NotificationService {
   );
 
   static const _reminderTimes = [
-    _ReminderTime(8, 0, 0, 'Breakfast time!', "Don't forget to log your breakfast."),
+    _ReminderTime(
+      8,
+      0,
+      0,
+      'Breakfast time!',
+      "Don't forget to log your breakfast.",
+    ),
     _ReminderTime(13, 0, 1, 'Lunch time!', 'Log your lunch to stay on track.'),
-    _ReminderTime(19, 0, 2, 'Dinner time!', 'Log your dinner and check your daily progress.'),
+    _ReminderTime(
+      19,
+      0,
+      2,
+      'Dinner time!',
+      'Log your dinner and check your daily progress.',
+    ),
   ];
 
   static Future<void> init() async {
@@ -45,8 +57,10 @@ class NotificationService {
       const InitializationSettings(android: android, iOS: ios),
     );
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -70,8 +84,10 @@ class NotificationService {
   }
 
   static Future<bool> areNotificationsEnabled() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       return await android.areNotificationsEnabled() ?? false;
     }
@@ -80,16 +96,24 @@ class NotificationService {
 
   static Future<bool> requestPermission() async {
     try {
-      final ios = _plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
       if (ios != null) {
-        final result = await ios.requestPermissions(alert: true, badge: true, sound: true);
+        final result = await ios.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
         _log('requestPermission iOS → $result');
         return result ?? false;
       }
 
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       if (android != null) {
         final alreadyEnabled = await android.areNotificationsEnabled() ?? false;
         if (alreadyEnabled) {
@@ -163,7 +187,14 @@ class NotificationService {
 
   static tz.TZDateTime _nextInstanceOf(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -171,7 +202,7 @@ class NotificationService {
   }
 
   static void _log(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Notify');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Notify');
   }
 }
 

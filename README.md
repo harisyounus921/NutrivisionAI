@@ -1,6 +1,6 @@
-# Nutrivision AI — AI Diet Monitoring App
+# MealNudge — AI Diet Monitoring App
 
-Nutrivision AI is a cross-platform (Android/iOS) mobile app, built with
+MealNudge is a cross-platform (Android/iOS) mobile app, built with
 Flutter, that automates diet tracking using AI-powered food image
 recognition, barcode scanning, and a conversational AI diet coach. It reduces
 the manual effort of conventional calorie-tracking apps while providing

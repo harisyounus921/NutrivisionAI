@@ -6,7 +6,7 @@ import '../services/dashboard_service.dart';
 
 class DashboardProvider extends ChangeNotifier {
   DashboardProvider({DashboardService? dashboardService})
-      : _service = dashboardService ?? DashboardService();
+    : _service = dashboardService ?? DashboardService();
 
   final DashboardService _service;
 
@@ -24,10 +24,15 @@ class DashboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final results = await Future.wait([_service.getDaily(), _service.getRange()]);
+      final results = await Future.wait([
+        _service.getDaily(),
+        _service.getRange(),
+      ]);
       _daily = results[0] as DailyData;
       _range = results[1] as List<RangeDayData>;
-      _d('load — daily: ${_daily?.calories.toStringAsFixed(0)} kcal, range: ${_range.length} days');
+      _d(
+        'load — daily: ${_daily?.calories.toStringAsFixed(0)} kcal, range: ${_range.length} days',
+      );
     } catch (e) {
       _d('load — error: $e (keeping stale data)');
     }
@@ -37,6 +42,6 @@ class DashboardProvider extends ChangeNotifier {
   }
 
   static void _d(String msg) {
-    if (kDebugMode) dev.log(msg, name: 'NutriVision·Dashboard');
+    if (kDebugMode) dev.log(msg, name: 'MealNudge·Dashboard');
   }
 }

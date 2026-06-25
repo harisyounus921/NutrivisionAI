@@ -1,4 +1,4 @@
-package com.haris.nutrivision
+package com.haris.mealnudge
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
