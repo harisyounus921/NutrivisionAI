@@ -2,21 +2,18 @@ import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
 
-import '../../../core/services/api_client.dart';
-import '../../../core/services/session_service.dart';
+import '../../../core/services/app_exception.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
 
-export '../../../core/services/api_client.dart' show ApiException;
+export '../../../core/services/app_exception.dart' show ApiException;
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
-  AuthProvider({SessionService? sessionService, AuthService? authService})
-    : _session = sessionService ?? SessionService(),
-      _authService = authService ?? AuthService();
+  AuthProvider({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
-  final SessionService _session;
   final AuthService _authService;
 
   AuthStatus _status = AuthStatus.unknown;
@@ -28,23 +25,13 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> tryAutoLogin() async {
-    _d('tryAutoLogin — checking stored session');
-    final loggedIn = await _session.isLoggedIn();
-    if (!loggedIn) {
-      _d('tryAutoLogin — no session found, going to login screen');
-      _status = AuthStatus.unauthenticated;
-      notifyListeners();
-      return;
-    }
-
-    _d('tryAutoLogin — session found, calling GET /auth/me');
+    _d('tryAutoLogin — checking Firebase auth user');
     try {
       _user = await _authService.getMe();
       _d('tryAutoLogin — success, user: ${_user?.email}');
       _status = AuthStatus.authenticated;
     } on ApiException catch (e) {
-      _d('tryAutoLogin — auth error: ${e.message} — clearing session');
-      await _session.clearSession();
+      _d('tryAutoLogin — auth error: ${e.message}');
       _status = AuthStatus.unauthenticated;
     } catch (e) {
       _d('tryAutoLogin — network/unexpected error: $e — keeping session');
@@ -54,17 +41,10 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> login({required String email, required String password}) async {
-    _d('login — POST /auth/login for $email');
+    _d('login — Firebase Auth sign-in for $email');
     _setLoading(true);
     try {
       final result = await _authService.login(email: email, password: password);
-      await _session.saveSession(
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        userId: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
-      );
       _user = result.user;
       _status = AuthStatus.authenticated;
       _d('login — success, userId: ${result.user.id}');
@@ -78,20 +58,13 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    _d('register — POST /auth/register for $email');
+    _d('register — Firebase Auth create user for $email');
     _setLoading(true);
     try {
       final result = await _authService.register(
         name: name,
         email: email,
         password: password,
-      );
-      await _session.saveSession(
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        userId: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
       );
       _user = result.user;
       _status = AuthStatus.authenticated;
@@ -102,8 +75,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _d('logout — clearing session');
-    await _session.clearSession();
+    _d('logout — Firebase sign out');
+    await _authService.logout();
     _user = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();

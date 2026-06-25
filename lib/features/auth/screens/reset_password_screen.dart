@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/services/api_client.dart';
+import '../../../core/services/app_exception.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 
@@ -43,7 +43,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
       setState(() => _isLoading = false);
       return;
@@ -87,7 +90,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       children: [
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -97,20 +103,37 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         color: Colors.white.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.verified_outlined, size: 48, color: Colors.white),
-                    ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+                      child: const Icon(
+                        Icons.verified_outlined,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ).animate().scale(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                    ),
                     const SizedBox(height: 16),
                     Text(
-                      'Enter Reset Code',
-                      style: textTheme.headlineMedium?.copyWith(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'Enter Reset Code',
+                          style: textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 150.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 6),
                     Text(
-                      'Check ${widget.email} for a 6-digit code',
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                      textAlign: TextAlign.center,
-                    ).animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                          'Check ${widget.email} for a 6-digit code',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate()
+                        .fadeIn(delay: 250.ms, duration: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                   ],
                 ),
               ),
@@ -122,48 +145,71 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       TextFormField(
-                        controller: _tokenController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        decoration: const InputDecoration(
-                          labelText: '6-digit code',
-                          prefixIcon: Icon(Icons.pin_outlined),
-                          counterText: '',
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().length != 6) return 'Enter the 6-digit code';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 100.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                            controller: _tokenController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            decoration: const InputDecoration(
+                              labelText: '6-digit code',
+                              prefixIcon: Icon(Icons.pin_outlined),
+                              counterText: '',
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().length != 6) {
+                                return 'Enter the 6-digit code';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 100.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscure,
-                        decoration: InputDecoration(
-                          labelText: 'New Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                          ),
-                        ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Enter a new password';
-                          if (v.length < 8) return 'Password must be at least 8 characters';
-                          return null;
-                        },
-                      ).animate().fadeIn(delay: 175.ms, duration: 350.ms).slideX(begin: 0.08, end: 0),
+                            controller: _passwordController,
+                            obscureText: _obscure,
+                            decoration: InputDecoration(
+                              labelText: 'New Password',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                              ),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Enter a new password';
+                              }
+                              if (v.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              return null;
+                            },
+                          )
+                          .animate()
+                          .fadeIn(delay: 175.ms, duration: 350.ms)
+                          .slideX(begin: 0.08, end: 0),
                       const SizedBox(height: 28),
                       FilledButton(
-                        onPressed: _isLoading ? null : _submit,
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Reset Password'),
-                      ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.1, end: 0),
+                            onPressed: _isLoading ? null : _submit,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Reset Password'),
+                          )
+                          .animate()
+                          .fadeIn(delay: 250.ms, duration: 350.ms)
+                          .slideY(begin: 0.1, end: 0),
                     ],
                   ),
                 ),

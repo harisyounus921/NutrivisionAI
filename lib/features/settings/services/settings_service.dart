@@ -1,13 +1,17 @@
-import '../../../core/services/api_client.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../core/services/app_exception.dart';
+import '../../../core/services/firebase_backend.dart';
+import '../../../core/services/firebase_collections.dart';
 
 class SettingsService {
-  SettingsService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
-
-  final ApiClient _api;
-
   Future<bool> loadMealRemindersEnabled() async {
     try {
-      final data = await _api.get('/settings/reminders') as Map<String, dynamic>?;
+      final doc = await FirebaseBackend.userDoc()
+          .collection(FirebaseCollections.privatePath)
+          .doc(FirebaseCollections.settingsDocument)
+          .get();
+      final data = doc.data();
       return data?['remindersEnabled'] as bool? ?? false;
     } on ApiException {
       return false;
@@ -15,6 +19,12 @@ class SettingsService {
   }
 
   Future<void> saveMealRemindersEnabled(bool value) async {
-    await _api.put('/settings/reminders', body: {'remindersEnabled': value});
+    await FirebaseBackend.userDoc()
+        .collection(FirebaseCollections.privatePath)
+        .doc(FirebaseCollections.settingsDocument)
+        .set({
+          'remindersEnabled': value,
+          'updatedAt': DateTime.now().toIso8601String(),
+        }, SetOptions(merge: true));
   }
 }

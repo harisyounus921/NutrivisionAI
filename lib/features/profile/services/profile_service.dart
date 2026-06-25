@@ -1,43 +1,47 @@
-import '../../../core/services/api_client.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../core/services/app_exception.dart';
+import '../../../core/services/firebase_backend.dart';
+import '../../../core/services/firebase_collections.dart';
 import '../models/user_profile.dart';
 
 extension _ActivityLevelApi on ActivityLevel {
   String get apiValue => switch (this) {
-        ActivityLevel.sedentary => 'sedentary',
-        ActivityLevel.light => 'light',
-        ActivityLevel.moderate => 'moderate',
-        ActivityLevel.active => 'active',
-        ActivityLevel.veryActive => 'very_active',
-      };
+    ActivityLevel.sedentary => 'sedentary',
+    ActivityLevel.light => 'light',
+    ActivityLevel.moderate => 'moderate',
+    ActivityLevel.active => 'active',
+    ActivityLevel.veryActive => 'very_active',
+  };
 }
 
 ActivityLevel _activityFromApi(String v) => switch (v) {
-      'very_active' => ActivityLevel.veryActive,
-      _ => ActivityLevel.values.byName(v),
-    };
+  'very_active' => ActivityLevel.veryActive,
+  _ => ActivityLevel.values.byName(v),
+};
 
 extension _DietGoalApi on DietGoal {
   String get apiValue => switch (this) {
-        DietGoal.lose => 'weight_loss',
-        DietGoal.maintain => 'maintenance',
-        DietGoal.gain => 'muscle_gain',
-      };
+    DietGoal.lose => 'weight_loss',
+    DietGoal.maintain => 'maintenance',
+    DietGoal.gain => 'muscle_gain',
+  };
 }
 
 DietGoal _goalFromApi(String v) => switch (v) {
-      'weight_loss' => DietGoal.lose,
-      'maintenance' => DietGoal.maintain,
-      'muscle_gain' => DietGoal.gain,
-      _ => DietGoal.maintain,
-    };
+  'weight_loss' => DietGoal.lose,
+  'maintenance' => DietGoal.maintain,
+  'muscle_gain' => DietGoal.gain,
+  _ => DietGoal.maintain,
+};
 
 extension _DietaryPrefApi on DietaryPreference {
   List<String> get apiList => switch (this) {
-        DietaryPreference.none => [],
-        DietaryPreference.vegetarian => ['vegetarian'],
-        DietaryPreference.halal => ['halal'],
-        DietaryPreference.glutenFree => ['gluten-free'],
-      };
+    DietaryPreference.none => [],
+    DietaryPreference.vegetarian => ['vegetarian'],
+    DietaryPreference.halal => ['halal'],
+    DietaryPreference.glutenFree => ['gluten-free'],
+  };
 }
 
 DietaryPreference _prefFromApiList(List<dynamic> list) {
@@ -48,13 +52,13 @@ DietaryPreference _prefFromApiList(List<dynamic> list) {
 }
 
 class ProfileService {
-  ProfileService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
-
-  final ApiClient _api;
-
   Future<UserProfile?> loadProfile() async {
     try {
-      final data = await _api.get('/profile') as Map<String, dynamic>?;
+      final doc = await FirebaseBackend.userDoc()
+          .collection(FirebaseCollections.privatePath)
+          .doc(FirebaseCollections.profileDocument)
+          .get();
+      final data = doc.data();
       if (data == null) return null;
 
       final age = data['age'];
@@ -64,7 +68,10 @@ class ProfileService {
       final activityLevel = data['activityLevel'];
       final goal = data['goal'];
 
-      if (age == null || gender == null || heightCm == null || weightKg == null) {
+      if (age == null ||
+          gender == null ||
+          heightCm == null ||
+          weightKg == null) {
         return null;
       }
 
@@ -73,7 +80,9 @@ class ProfileService {
         gender: Gender.values.byName(gender as String),
         heightCm: (heightCm as num).toDouble(),
         weightKg: (weightKg as num).toDouble(),
-        activityLevel: _activityFromApi(activityLevel as String? ?? 'sedentary'),
+        activityLevel: _activityFromApi(
+          activityLevel as String? ?? 'sedentary',
+        ),
         goal: _goalFromApi(goal as String? ?? 'maintenance'),
         dietaryPreference: _prefFromApiList(
           (data['dietaryPreferences'] as List<dynamic>?) ?? [],
@@ -86,18 +95,26 @@ class ProfileService {
   }
 
   Future<void> saveProfile(UserProfile profile) async {
-    await _api.put('/profile', body: {
-      'age': profile.age,
-      'gender': profile.gender.name,
-      'heightCm': profile.heightCm,
-      'weightKg': profile.weightKg,
-      'activityLevel': profile.activityLevel.apiValue,
-      'goal': profile.goal.apiValue,
-      'dietaryPreferences': profile.dietaryPreference.apiList,
-      'allergies': profile.allergies,
-    });
+    await FirebaseBackend.userDoc()
+        .collection(FirebaseCollections.privatePath)
+        .doc(FirebaseCollections.profileDocument)
+        .set({
+          'age': profile.age,
+          'gender': profile.gender.name,
+          'heightCm': profile.heightCm,
+          'weightKg': profile.weightKg,
+          'activityLevel': profile.activityLevel.apiValue,
+          'goal': profile.goal.apiValue,
+          'dietaryPreferences': profile.dietaryPreference.apiList,
+          'allergies': profile.allergies,
+          'updatedAt': DateTime.now().toIso8601String(),
+        }, SetOptions(merge: true));
   }
 
   Future<void> clearProfile() async {
+    await FirebaseBackend.userDoc()
+        .collection(FirebaseCollections.privatePath)
+        .doc(FirebaseCollections.profileDocument)
+        .delete();
   }
 }

@@ -1,4 +1,5 @@
-import '../../../core/services/api_client.dart';
+import '../../../core/services/firebase_backend.dart';
+import '../../../core/services/firebase_collections.dart';
 
 class DailyData {
   const DailyData({
@@ -55,25 +56,95 @@ class RangeDayData {
   final double caloriesBurned;
 
   factory RangeDayData.fromJson(Map<String, dynamic> json) => RangeDayData(
-        date: DateTime.parse(json['date'] as String),
-        calories: (json['calories'] as num? ?? 0).toDouble(),
-        caloriesBurned: (json['caloriesBurned'] as num? ?? 0).toDouble(),
-      );
+    date: DateTime.parse(json['date'] as String),
+    calories: (json['calories'] as num? ?? 0).toDouble(),
+    caloriesBurned: (json['caloriesBurned'] as num? ?? 0).toDouble(),
+  );
 }
 
 class DashboardService {
-  DashboardService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
-
-  final ApiClient _api;
-
   Future<DailyData> getDaily() async {
-    final data = await _api.get('/dashboard/daily') as Map<String, dynamic>;
-    return DailyData.fromJson(data);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+
+    final meals =
+        await FirebaseBackend.userCollection(FirebaseCollections.mealsPath)
+            .where('loggedAt', isGreaterThanOrEqualTo: today.toIso8601String())
+            .where('loggedAt', isLessThan: tomorrow.toIso8601String())
+            .get();
+
+    final healthDoc = await FirebaseBackend.userCollection(
+      FirebaseCollections.healthSummariesPath,
+    ).doc(_dateKey(today)).get();
+    final health = healthDoc.data() ?? {};
+
+    final totals = meals.docs.fold<Map<String, double>>(
+      {'calories': 0, 'protein': 0, 'carbs': 0, 'fat': 0},
+      (sum, doc) {
+        final data = doc.data();
+        sum['calories'] =
+            sum['calories']! + (data['calories'] as num? ?? 0).toDouble();
+        sum['protein'] =
+            sum['protein']! + (data['protein'] as num? ?? 0).toDouble();
+        sum['carbs'] = sum['carbs']! + (data['carbs'] as num? ?? 0).toDouble();
+        sum['fat'] = sum['fat']! + (data['fat'] as num? ?? 0).toDouble();
+        return sum;
+      },
+    );
+
+    final caloriesBurned = (health['caloriesBurned'] as num? ?? 0).toDouble();
+    return DailyData.fromJson({
+      'totals': totals,
+      'goals': {},
+      'caloriesBurned': caloriesBurned,
+      'netCalories': totals['calories']! - caloriesBurned,
+    });
   }
 
   Future<List<RangeDayData>> getRange() async {
-    final data = await _api.get('/dashboard/range') as Map<String, dynamic>;
-    final days = (data['days'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    return days.map(RangeDayData.fromJson).toList();
+    final now = DateTime.now();
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(days: 6));
+    final meals = await FirebaseBackend.userCollection(
+      FirebaseCollections.mealsPath,
+    ).where('loggedAt', isGreaterThanOrEqualTo: start.toIso8601String()).get();
+    final health = await FirebaseBackend.userCollection(
+      FirebaseCollections.healthSummariesPath,
+    ).where('date', isGreaterThanOrEqualTo: _dateKey(start)).get();
+
+    return List.generate(7, (index) {
+      final day = start.add(Duration(days: index));
+      final next = day.add(const Duration(days: 1));
+      final calories = meals.docs
+          .where((doc) {
+            final loggedAt = DateTime.tryParse(
+              doc.data()['loggedAt'] as String? ?? '',
+            );
+            return loggedAt != null &&
+                !loggedAt.isBefore(day) &&
+                loggedAt.isBefore(next);
+          })
+          .fold<double>(
+            0,
+            (sum, doc) =>
+                sum + (doc.data()['calories'] as num? ?? 0).toDouble(),
+          );
+      final healthDoc = health.docs
+          .where((doc) => doc.id == _dateKey(day))
+          .firstOrNull;
+      return RangeDayData(
+        date: day,
+        calories: calories,
+        caloriesBurned: (healthDoc?.data()['caloriesBurned'] as num? ?? 0)
+            .toDouble(),
+      );
+    });
   }
+
+  String _dateKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../core/navigation/app_page_route.dart';
-import '../../../core/services/api_client.dart';
+import '../../../core/services/app_exception.dart';
 import '../services/food_service.dart';
 import 'log_portion_screen.dart';
 
@@ -60,7 +60,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.error),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
     );
   }
 
@@ -77,7 +80,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
             icon: ValueListenableBuilder(
               valueListenable: _controller,
               builder: (context, state, child) => Icon(
-                state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                state.torchState == TorchState.on
+                    ? Icons.flash_on
+                    : Icons.flash_off,
               ),
             ),
             onPressed: _controller.toggleTorch,
@@ -86,10 +91,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
       ),
       body: Stack(
         children: [
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _controller, onDetect: _onDetect),
           Center(
             child: Container(
               width: 260,
@@ -106,13 +108,18 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
             bottom: 60,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  _processing ? 'Looking up barcode…' : 'Point camera at a barcode',
+                  _processing
+                      ? 'Looking up barcode…'
+                      : 'Point camera at a barcode',
                   style: textTheme.bodyMedium?.copyWith(color: Colors.white),
                 ),
               ),

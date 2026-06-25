@@ -62,9 +62,10 @@ class ChatProvider extends ChangeNotifier {
     try {
       final conversationId = await _chatService.getConversationId();
       _d('sendMessage — conversationId: $conversationId');
-      final result = await _chatService.sendToApi(
+      final result = await _chatService.sendToFirebase(
         message: trimmed,
         conversationId: conversationId,
+        coachContext: coachContext,
       );
       await _chatService.saveConversationId(result.conversationId);
       _d(

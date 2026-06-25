@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "123265212903",
+    "project_id": "stylst-921",
+    "storage_bucket": "stylst-921.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123265212903:android:e5205d9f2c1621b4dbdd42",
+        "android_client_info": {
+          "package_name": "com.haris.mealnudge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArOXGACKjLOOdmg6XR3fG49-HIKEseuas"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
 import 'core/services/notification_service.dart';
@@ -13,9 +14,17 @@ import 'features/profile/providers/profile_provider.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
 import 'features/gamification/providers/gamification_provider.dart';
 import 'features/settings/providers/settings_provider.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e, s) {
+    debugPrint('Firebase.initializeApp failed: $e\n$s');
+  }
   try {
     await NotificationService.init();
   } catch (e, s) {

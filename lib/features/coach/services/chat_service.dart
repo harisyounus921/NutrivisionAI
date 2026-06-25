@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/services/api_client.dart';
+import '../../../core/services/firebase_backend.dart';
+import '../../../core/services/firebase_collections.dart';
 import '../models/chat_message.dart';
+import 'coach_response_service.dart';
 
 class ConversationSummary {
   const ConversationSummary({
@@ -20,7 +23,8 @@ class ConversationSummary {
   final DateTime updatedAt;
   final int messageCount;
 
-  factory ConversationSummary.fromJson(Map<String, dynamic> json) => ConversationSummary(
+  factory ConversationSummary.fromJson(Map<String, dynamic> json) =>
+      ConversationSummary(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? 'Conversation',
         lastMessage: json['lastMessage'] as String?,
@@ -42,7 +46,8 @@ class ConversationMessage {
   final String content;
   final DateTime createdAt;
 
-  factory ConversationMessage.fromJson(Map<String, dynamic> json) => ConversationMessage(
+  factory ConversationMessage.fromJson(Map<String, dynamic> json) =>
+      ConversationMessage(
         role: json['role'] as String? ?? 'user',
         content: json['content'] as String? ?? '',
         createdAt: json['createdAt'] != null
@@ -52,37 +57,65 @@ class ConversationMessage {
 }
 
 class ChatService {
-  ChatService({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
-
   static const _keyChatMessages = 'coach_chat_messages';
   static const _keyConversationId = 'coach_conversation_id';
 
-  final ApiClient _api;
+  final _coachResponseService = CoachResponseService();
 
   Future<List<ConversationSummary>> getConversations() async {
-    final data = await _api.get('/coach/conversations') as List<dynamic>? ?? [];
-    return data.cast<Map<String, dynamic>>().map(ConversationSummary.fromJson).toList();
+    final snapshot = await FirebaseBackend.userCollection(
+      FirebaseCollections.conversationsPath,
+    ).orderBy('updatedAt', descending: true).get();
+    return snapshot.docs
+        .map(
+          (doc) => ConversationSummary.fromJson({'id': doc.id, ...doc.data()}),
+        )
+        .toList();
   }
 
   Future<List<ConversationMessage>> getConversation(String id) async {
-    final data = await _api.get('/coach/conversations/$id') as Map<String, dynamic>;
-    final messages = (data['messages'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
-    return messages.map(ConversationMessage.fromJson).toList();
+    final snapshot =
+        await FirebaseBackend.userCollection(
+              FirebaseCollections.conversationsPath,
+            )
+            .doc(id)
+            .collection(FirebaseCollections.messagesPath)
+            .orderBy('createdAt')
+            .get();
+    return snapshot.docs
+        .map((doc) => ConversationMessage.fromJson(doc.data()))
+        .toList();
   }
 
-  Future<({String reply, String conversationId})> sendToApi({
+  Future<({String reply, String conversationId})> sendToFirebase({
     required String message,
+    required CoachContext coachContext,
     String? conversationId,
   }) async {
-    final data = await _api.post('/coach/chat', body: {
-      'message': message,
-      'conversationId': ?conversationId,
-    }) as Map<String, dynamic>;
-
-    return (
-      reply: data['reply'] as String,
-      conversationId: data['conversationId'] as String,
+    final conversations = FirebaseBackend.userCollection(
+      FirebaseCollections.conversationsPath,
     );
+    final conversationRef = conversationId == null
+        ? conversations.doc()
+        : conversations.doc(conversationId);
+    final now = DateTime.now().toIso8601String();
+    final reply = _coachResponseService.reply(message, coachContext);
+    await conversationRef.set({
+      'title': message.length > 40 ? '${message.substring(0, 40)}...' : message,
+      'lastMessage': reply,
+      'updatedAt': now,
+      'messageCount': FieldValue.increment(2),
+    }, SetOptions(merge: true));
+    final messages = conversationRef.collection(
+      FirebaseCollections.messagesPath,
+    );
+    await messages.add({'role': 'user', 'content': message, 'createdAt': now});
+    await messages.add({
+      'role': 'coach',
+      'content': reply,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+    return (reply: reply, conversationId: conversationRef.id);
   }
 
   Future<String?> getConversationId() async {

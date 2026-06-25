@@ -5,7 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/navigation/app_page_route.dart';
-import '../../../core/services/api_client.dart';
+import '../../../core/services/app_exception.dart';
 import '../../../core/theme/app_theme.dart';
 import '../models/food_item.dart';
 import '../models/recognition_candidate.dart';
