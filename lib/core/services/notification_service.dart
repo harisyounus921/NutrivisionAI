@@ -19,6 +19,7 @@ class NotificationService {
       _channelId,
       _channelName,
       channelDescription: _channelDesc,
+      icon: 'ic_stat_mealnudge',
       importance: Importance.high,
       priority: Priority.high,
     ),
@@ -47,7 +48,9 @@ class NotificationService {
     tz.initializeTimeZones();
     await _configureLocalTimezone();
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const android = AndroidInitializationSettings(
+      '@drawable/ic_stat_mealnudge',
+    );
     const ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
