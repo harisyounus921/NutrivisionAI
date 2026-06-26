@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../coach/screens/coach_chat_screen.dart';
+import '../../dashboard/providers/dashboard_provider.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
+import '../../gamification/providers/gamification_provider.dart';
 import '../../gamification/screens/achievements_screen.dart';
+import '../../health/providers/activity_log_provider.dart';
 import '../../health/screens/health_screen.dart';
 import 'home_screen.dart';
 
@@ -60,9 +64,38 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: _MealNudgeNavBar(
         selectedIndex: _selectedIndex,
         items: _items,
-        onSelected: (index) => setState(() => _selectedIndex = index),
+        onSelected: _selectTab,
       ),
     );
+  }
+
+  void _selectTab(int index) {
+    setState(() => _selectedIndex = index);
+    _refreshTabData(index);
+  }
+
+  void _refreshTabData(int index) {
+    switch (index) {
+      case 1:
+        final dashboard = context.read<DashboardProvider>();
+        if (!dashboard.isLoading) {
+          dashboard.load();
+        }
+      case 3:
+        final activityLog = context.read<ActivityLogProvider>();
+        if (!activityLog.isLoading) {
+          activityLog.loadLogs();
+        }
+        final dashboard = context.read<DashboardProvider>();
+        if (!dashboard.isLoading) {
+          dashboard.load();
+        }
+      case 4:
+        final gamification = context.read<GamificationProvider>();
+        if (!gamification.isLoading) {
+          gamification.load();
+        }
+    }
   }
 }
 
