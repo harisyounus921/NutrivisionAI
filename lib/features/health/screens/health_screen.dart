@@ -14,7 +14,14 @@ import '../services/health_api_service.dart';
 import '../services/health_device_service.dart';
 import 'log_activity_screen.dart';
 
-enum _SyncState { idle, syncing, success, permissionDenied, notInstalled, error }
+enum _SyncState {
+  idle,
+  syncing,
+  success,
+  permissionDenied,
+  notInstalled,
+  error,
+}
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -53,18 +60,21 @@ class _HealthScreenState extends State<HealthScreen> {
         await HealthDeviceService.loadLastSync();
     if (!mounted || time == null || result == null) return;
     final now = DateTime.now();
-    final isToday = time.year == now.year && time.month == now.month && time.day == now.day;
+    final isToday =
+        time.year == now.year && time.month == now.month && time.day == now.day;
     final timeStr = _fmtTime(time);
     if (isToday) {
       context.read<ActivityLogProvider>().setDeviceData(
-            steps: steps,
-            caloriesBurned: caloriesBurned,
-            date: time,
-          );
+        steps: steps,
+        caloriesBurned: caloriesBurned,
+        date: time,
+      );
     }
     setState(() {
       _syncState = _SyncState.success;
-      _syncResult = isToday ? 'Synced today at $timeStr · $result' : 'Last synced ${_fmtDate(time)} · $result';
+      _syncResult = isToday
+          ? 'Synced today at $timeStr · $result'
+          : 'Last synced ${_fmtDate(time)} · $result';
     });
   }
 
@@ -75,7 +85,20 @@ class _HealthScreenState extends State<HealthScreen> {
   }
 
   String _fmtDate(DateTime dt) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[dt.month - 1]} ${dt.day}';
   }
 
@@ -88,7 +111,8 @@ class _HealthScreenState extends State<HealthScreen> {
 
     try {
       if (Platform.isAndroid) {
-        final availability = await HealthDeviceService.checkAndroidAvailability();
+        final availability =
+            await HealthDeviceService.checkAndroidAvailability();
         if (availability == HealthConnectAvailability.notInstalled) {
           if (!mounted) return;
           setState(() => _syncState = _SyncState.notInstalled);
@@ -104,15 +128,11 @@ class _HealthScreenState extends State<HealthScreen> {
         }
       }
 
-      final alreadyGranted = await HealthDeviceService.wasPermissionGranted();
-      if (!alreadyGranted) {
+      final granted = await HealthDeviceService.ensurePermissions();
+      if (!granted) {
         if (!mounted) return;
-        final granted = await HealthDeviceService.requestPermissions();
-        if (!granted) {
-          if (!mounted) return;
-          setState(() => _syncState = _SyncState.permissionDenied);
-          return;
-        }
+        setState(() => _syncState = _SyncState.permissionDenied);
+        return;
       }
 
       final data = await HealthDeviceService.readToday();
@@ -120,16 +140,25 @@ class _HealthScreenState extends State<HealthScreen> {
         if (!mounted) return;
         setState(() {
           _syncState = _SyncState.error;
-          _syncResult = 'Could not read health data. Make sure the Health app has data for today.';
+          _syncResult =
+              'Could not read health data. Make sure the Health app has data for today.';
         });
         return;
       }
 
+      final resultText =
+          '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
+
       if (!mounted) return;
       context.read<ActivityLogProvider>().setDeviceData(
-            steps: data.steps,
-            caloriesBurned: data.caloriesBurned,
-          );
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+      );
+      await HealthDeviceService.saveLastSync(
+        result: resultText,
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+      );
 
       await _healthApiService.syncHealthData(
         date: DateTime.now(),
@@ -139,13 +168,6 @@ class _HealthScreenState extends State<HealthScreen> {
       );
 
       await _loadServerSummary();
-
-      final resultText = '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
-      await HealthDeviceService.saveLastSync(
-        result: resultText,
-        steps: data.steps,
-        caloriesBurned: data.caloriesBurned,
-      );
 
       if (!mounted) return;
       final now = DateTime.now();
@@ -181,10 +203,12 @@ class _HealthScreenState extends State<HealthScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _NetCaloriesCard(consumed: consumed, burned: burned, net: net, goal: profile?.dailyCalorieGoal)
-                .animate()
-                .fadeIn(duration: 350.ms)
-                .slideY(begin: 0.06, end: 0),
+            _NetCaloriesCard(
+              consumed: consumed,
+              burned: burned,
+              net: net,
+              goal: profile?.dailyCalorieGoal,
+            ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.06, end: 0),
             const SizedBox(height: 16),
             _StepsCard(steps: activityLogProvider.todaySteps)
                 .animate()
@@ -199,12 +223,15 @@ class _HealthScreenState extends State<HealthScreen> {
               const SizedBox(height: 16),
             ],
             _SyncCard(
-              syncState: _syncState,
-              syncResult: _syncResult,
-              onSync: _syncHealthData,
-              onOpenSettings: HealthDeviceService.openHealthConnectSettings,
-              onInstall: HealthDeviceService.installOrOpenHealthConnect,
-            ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
+                  syncState: _syncState,
+                  syncResult: _syncResult,
+                  onSync: _syncHealthData,
+                  onOpenSettings: HealthDeviceService.openHealthConnectSettings,
+                  onInstall: HealthDeviceService.installOrOpenHealthConnect,
+                )
+                .animate()
+                .fadeIn(delay: 250.ms, duration: 350.ms)
+                .slideY(begin: 0.06, end: 0),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -213,44 +240,67 @@ class _HealthScreenState extends State<HealthScreen> {
                 if (todayLogs.isNotEmpty)
                   Text(
                     '${todayLogs.length} logged',
-                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
               ],
             ).animate().fadeIn(delay: 250.ms, duration: 350.ms),
             const SizedBox(height: 8),
             if (todayLogs.isEmpty)
-              const _EmptyActivityCard().animate().fadeIn(delay: 300.ms, duration: 350.ms)
+              const _EmptyActivityCard().animate().fadeIn(
+                delay: 300.ms,
+                duration: 350.ms,
+              )
             else
               ...todayLogs.asMap().entries.map(
-                    (entry) => _ActivityCard(
-                      log: entry.value,
-                      onDelete: () => context.read<ActivityLogProvider>().removeLog(entry.value.id),
-                    ).animate().fadeIn(delay: (250 + entry.key * 60).ms, duration: 300.ms).slideX(begin: 0.06, end: 0),
-                  ),
+                (entry) =>
+                    _ActivityCard(
+                          log: entry.value,
+                          onDelete: () => context
+                              .read<ActivityLogProvider>()
+                              .removeLog(entry.value.id),
+                        )
+                        .animate()
+                        .fadeIn(
+                          delay: (250 + entry.key * 60).ms,
+                          duration: 300.ms,
+                        )
+                        .slideX(begin: 0.06, end: 0),
+              ),
             const SizedBox(height: 72),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: 'fab_log_activity',
-        onPressed: () {
-          Navigator.of(context).push(
-            AppPageRoute(builder: (_) => const LogActivityScreen()),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Log Activity'),
-      ).animate().fadeIn(delay: 300.ms, duration: 350.ms).scale(
-            begin: const Offset(0.8, 0.8),
-            end: const Offset(1, 1),
-            curve: Curves.easeOutBack,
-          ),
+      floatingActionButton:
+          FloatingActionButton.extended(
+                heroTag: 'fab_log_activity',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    AppPageRoute(builder: (_) => const LogActivityScreen()),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Log Activity'),
+              )
+              .animate()
+              .fadeIn(delay: 300.ms, duration: 350.ms)
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1, 1),
+                curve: Curves.easeOutBack,
+              ),
     );
   }
 }
 
 class _NetCaloriesCard extends StatelessWidget {
-  const _NetCaloriesCard({required this.consumed, required this.burned, required this.net, required this.goal});
+  const _NetCaloriesCard({
+    required this.consumed,
+    required this.burned,
+    required this.net,
+    required this.goal,
+  });
 
   final double consumed;
   final double burned;
@@ -274,15 +324,25 @@ class _NetCaloriesCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: AppTheme.secondary.withValues(alpha: 0.15),
-                  child: const Icon(Icons.balance, size: 18, color: AppTheme.secondary),
+                  child: const Icon(
+                    Icons.balance,
+                    size: 18,
+                    color: AppTheme.secondary,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text('Net Calorie Balance', style: textTheme.titleMedium),
               ],
             ),
             const SizedBox(height: 16),
-            _StatRow(label: 'Consumed', value: '${consumed.toStringAsFixed(0)} kcal'),
-            _StatRow(label: 'Burned', value: '-${burned.toStringAsFixed(0)} kcal'),
+            _StatRow(
+              label: 'Consumed',
+              value: '${consumed.toStringAsFixed(0)} kcal',
+            ),
+            _StatRow(
+              label: 'Burned',
+              value: '-${burned.toStringAsFixed(0)} kcal',
+            ),
             const Divider(),
             _StatRow(
               label: 'Net intake',
@@ -296,7 +356,9 @@ class _NetCaloriesCard extends StatelessWidget {
                     ? '${(goal! - net).toStringAsFixed(0)} kcal under your $goal kcal goal'
                     : '${(net - goal!).toStringAsFixed(0)} kcal over your $goal kcal goal',
                 style: textTheme.bodySmall?.copyWith(
-                  color: isOver ? colorScheme.error : colorScheme.onSurfaceVariant,
+                  color: isOver
+                      ? colorScheme.error
+                      : colorScheme.onSurfaceVariant,
                   fontWeight: isOver ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),
@@ -326,7 +388,11 @@ class _StepsCard extends StatelessWidget {
             CircleAvatar(
               radius: 24,
               backgroundColor: colorScheme.primaryContainer,
-              child: Icon(Icons.directions_walk, color: colorScheme.onPrimaryContainer, size: 26),
+              child: Icon(
+                Icons.directions_walk,
+                color: colorScheme.onPrimaryContainer,
+                size: 26,
+              ),
             ),
             const SizedBox(width: 16),
             Column(
@@ -336,7 +402,10 @@ class _StepsCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '$steps',
-                  style: textTheme.headlineSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w700),
+                  style: textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -368,8 +437,12 @@ class _SyncCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final isSyncing = syncState == _SyncState.syncing;
     final isSynced = syncState == _SyncState.success;
-    final platformLabel = Platform.isIOS ? 'Sync with Apple Health' : 'Sync with Google Fit';
-    final platformIcon = Platform.isIOS ? Icons.favorite_border : Icons.fitness_center;
+    final platformLabel = Platform.isIOS
+        ? 'Sync with Apple Health'
+        : 'Sync with Health Connect';
+    final platformIcon = Platform.isIOS
+        ? Icons.favorite_border
+        : Icons.health_and_safety_outlined;
     final label = isSynced ? 'Sync Again' : platformLabel;
     final icon = isSynced ? Icons.refresh : platformIcon;
 
@@ -384,7 +457,11 @@ class _SyncCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: AppTheme.accent.withValues(alpha: 0.18),
-                  child: const Icon(Icons.sync, size: 18, color: AppTheme.accent),
+                  child: const Icon(
+                    Icons.sync,
+                    size: 18,
+                    color: AppTheme.accent,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text('Sync Activity Data', style: textTheme.titleMedium),
@@ -392,8 +469,12 @@ class _SyncCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Import today\'s steps and calories burned directly from your device.',
-              style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+              Platform.isIOS
+                  ? 'Import today\'s steps and calories burned from Apple Health.'
+                  : 'Import today\'s steps and calories burned from Health Connect.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
 
             if (syncState == _SyncState.success) ...[
@@ -411,12 +492,15 @@ class _SyncCard extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onOpenSettings,
                 icon: const Icon(Icons.settings_outlined),
-                label: Text(Platform.isAndroid ? 'Open Health Connect' : 'Open Settings'),
+                label: Text(
+                  Platform.isAndroid ? 'Open Health Connect' : 'Open Settings',
+                ),
               ),
             ] else if (syncState == _SyncState.notInstalled) ...[
               const SizedBox(height: 10),
               _StatusBanner(
-                message: 'Health Connect is not installed. Install it to sync your data.',
+                message:
+                    'Health Connect is not installed. Install it to sync your data.',
                 isSuccess: false,
               ),
               const SizedBox(height: 8),
@@ -437,7 +521,10 @@ class _SyncCard extends StatelessWidget {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Icon(icon),
               label: Text(isSyncing ? 'Syncing…' : label),
@@ -461,15 +548,19 @@ class _StatusBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isSuccess ? colorScheme.primaryContainer : colorScheme.errorContainer,
+        color: isSuccess
+            ? colorScheme.primaryContainer
+            : colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isSuccess ? colorScheme.onPrimaryContainer : colorScheme.onErrorContainer,
-              fontWeight: FontWeight.w600,
-            ),
+          color: isSuccess
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onErrorContainer,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -490,7 +581,10 @@ class _StatRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: valueColor)),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w700, color: valueColor),
+          ),
         ],
       ),
     );
@@ -510,13 +604,19 @@ class _EmptyActivityCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 28),
         child: Column(
           children: [
-            Icon(Icons.directions_run, size: 40, color: colorScheme.primary.withValues(alpha: 0.5)),
+            Icon(
+              Icons.directions_run,
+              size: 40,
+              color: colorScheme.primary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             Text('No activity logged yet today', style: textTheme.titleSmall),
             const SizedBox(height: 4),
             Text(
               'Tap "Log Activity" to add your first entry.',
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -544,24 +644,39 @@ class _ActivityCard extends StatelessWidget {
             CircleAvatar(
               radius: 22,
               backgroundColor: colorScheme.secondaryContainer,
-              child: Icon(Icons.directions_run, color: colorScheme.onSecondaryContainer),
+              child: Icon(
+                Icons.directions_run,
+                color: colorScheme.onSecondaryContainer,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(log.activityName, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                   Text(
-                    log.steps > 0 ? '${log.steps} steps · ${log.source.label}' : log.source.label,
-                    style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                    log.activityName,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    log.steps > 0
+                        ? '${log.steps} steps · ${log.source.label}'
+                        : log.source.label,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
             Text(
               '-${log.caloriesBurned.toStringAsFixed(0)} kcal',
-              style: textTheme.titleSmall?.copyWith(color: AppTheme.secondary, fontWeight: FontWeight.w700),
+              style: textTheme.titleSmall?.copyWith(
+                color: AppTheme.secondary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -596,7 +711,11 @@ class _HealthSummaryCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: colorScheme.primaryContainer,
-                  child: Icon(Icons.insights_outlined, size: 18, color: colorScheme.onPrimaryContainer),
+                  child: Icon(
+                    Icons.insights_outlined,
+                    size: 18,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text('7-Day Health Summary', style: textTheme.titleMedium),
@@ -620,13 +739,20 @@ class _HealthSummaryCard extends StatelessWidget {
                               : colorScheme.surfaceContainerHighest,
                         ),
                         child: hasData
-                            ? Icon(Icons.check, size: 14, color: colorScheme.onSecondaryContainer)
+                            ? Icon(
+                                Icons.check,
+                                size: 14,
+                                color: colorScheme.onSecondaryContainer,
+                              )
                             : null,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         _dayLabel(d.date),
-                        style: textTheme.bodySmall?.copyWith(fontSize: 10, color: colorScheme.onSurfaceVariant),
+                        style: textTheme.bodySmall?.copyWith(
+                          fontSize: 10,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -673,27 +799,37 @@ class _HealthSummaryCard extends StatelessWidget {
   String _avgBurned() {
     final active = days.where((d) => d.caloriesBurned > 0).toList();
     if (active.isEmpty) return '0 kcal';
-    final avg = active.map((d) => d.caloriesBurned).reduce((a, b) => a + b) / active.length;
+    final avg =
+        active.map((d) => d.caloriesBurned).reduce((a, b) => a + b) /
+        active.length;
     return '${avg.toStringAsFixed(0)} kcal';
   }
 
   String _avgSteps() {
     final active = days.where((d) => d.steps > 0).toList();
     if (active.isEmpty) return '0';
-    final avg = active.map((d) => d.steps).reduce((a, b) => a + b) / active.length;
+    final avg =
+        active.map((d) => d.steps).reduce((a, b) => a + b) / active.length;
     return avg.toStringAsFixed(0);
   }
 
   String _avgActive() {
     final active = days.where((d) => d.activeMinutes > 0).toList();
     if (active.isEmpty) return '0 min';
-    final avg = active.map((d) => d.activeMinutes).reduce((a, b) => a + b) / active.length;
+    final avg =
+        active.map((d) => d.activeMinutes).reduce((a, b) => a + b) /
+        active.length;
     return '${avg.toStringAsFixed(0)} min';
   }
 }
 
 class _HealthStat extends StatelessWidget {
-  const _HealthStat({required this.icon, required this.color, required this.label, required this.value});
+  const _HealthStat({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
   final Color color;
@@ -707,7 +843,10 @@ class _HealthStat extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 20),
         const SizedBox(height: 4),
-        Text(value, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
         Text(
           label,
           style: textTheme.bodySmall?.copyWith(

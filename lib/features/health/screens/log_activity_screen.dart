@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/widgets/log_option_card.dart';
+import '../providers/activity_log_provider.dart';
 import '../services/health_api_service.dart';
 import '../services/health_device_service.dart';
 import 'activity_search_screen.dart';
@@ -25,18 +27,35 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
     setState(() => _syncing = true);
 
     try {
-      final alreadyGranted = await HealthDeviceService.wasPermissionGranted();
-      if (!alreadyGranted) {
-        if (!mounted) return;
-        final granted = await HealthDeviceService.requestPermissions();
-        if (!granted) {
+      if (Platform.isAndroid) {
+        final availability =
+            await HealthDeviceService.checkAndroidAvailability();
+        if (availability != HealthConnectAvailability.available) {
           if (!mounted) return;
           setState(() => _syncing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Health permission denied. Enable it in Settings.')),
+            SnackBar(
+              content: Text(
+                availability == HealthConnectAvailability.notInstalled
+                    ? 'Health Connect is not installed. Install it to sync activity data.'
+                    : 'Health Connect is not supported on this device.',
+              ),
+            ),
           );
           return;
         }
+      }
+
+      final granted = await HealthDeviceService.ensurePermissions();
+      if (!granted) {
+        if (!mounted) return;
+        setState(() => _syncing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Health permission denied. Enable it in Settings.'),
+          ),
+        );
+        return;
       }
 
       final data = await HealthDeviceService.readToday();
@@ -44,11 +63,28 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
       if (data == null) {
         setState(() => _syncing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read health data. Make sure the Health app has data.')),
+          const SnackBar(
+            content: Text(
+              'Could not read health data. Make sure the Health app has data.',
+            ),
+          ),
         );
         return;
       }
 
+      if (!mounted) return;
+      context.read<ActivityLogProvider>().setDeviceData(
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+      );
+
+      final resultText =
+          '${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned';
+      await HealthDeviceService.saveLastSync(
+        result: resultText,
+        steps: data.steps,
+        caloriesBurned: data.caloriesBurned,
+      );
       await _healthApiService.syncHealthData(
         date: DateTime.now(),
         steps: data.steps,
@@ -58,11 +94,9 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
 
       if (!mounted) return;
       setState(() => _syncing = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Synced: ${data.steps} steps · ${data.caloriesBurned.toStringAsFixed(0)} kcal burned'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Synced: $resultText')));
       Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
@@ -107,8 +141,10 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                 LogOptionCard(
                   icon: _syncing ? Icons.hourglass_top : Icons.fitness_center,
                   iconColor: colorScheme.tertiary,
-                  title: 'Sync with Google Fit',
-                  subtitle: _syncing ? 'Syncing…' : 'Import today\'s steps and calories from Google Fit',
+                  title: 'Sync with Health Connect',
+                  subtitle: _syncing
+                      ? 'Syncing…'
+                      : 'Import today\'s steps and calories from Health Connect',
                   animationDelay: 100.ms,
                   onTap: _syncing ? () {} : _syncFromDevice,
                 ),
@@ -117,7 +153,9 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
                   icon: _syncing ? Icons.hourglass_top : Icons.favorite_border,
                   iconColor: colorScheme.secondary,
                   title: 'Sync with Apple Health',
-                  subtitle: _syncing ? 'Syncing…' : 'Import today\'s steps and calories from Apple Health',
+                  subtitle: _syncing
+                      ? 'Syncing…'
+                      : 'Import today\'s steps and calories from Apple Health',
                   animationDelay: 100.ms,
                   onTap: _syncing ? () {} : _syncFromDevice,
                 ),

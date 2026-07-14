@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/navigation/post_auth_navigation.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../food/providers/meal_log_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/auth_provider.dart';
@@ -75,18 +76,9 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.heroGradient,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: const Icon(
-                    Icons.bolt_rounded,
-                    size: 42,
-                    color: Colors.white,
-                  ),
+                const AppLogo(
+                  size: 76,
+                  borderRadius: 22,
                 ).animate().scale(duration: 560.ms, curve: Curves.easeOutBack),
                 const SizedBox(height: 22),
                 Text(

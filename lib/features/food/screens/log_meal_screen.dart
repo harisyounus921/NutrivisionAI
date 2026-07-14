@@ -3,9 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/widgets/log_option_card.dart';
-import 'barcode_scan_screen.dart';
 import 'food_search_screen.dart';
-import 'photo_recognize_screen.dart';
 
 class LogMealScreen extends StatelessWidget {
   const LogMealScreen({super.key});
@@ -39,32 +37,32 @@ class LogMealScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              LogOptionCard(
-                icon: Icons.qr_code_scanner,
-                iconColor: colorScheme.tertiary,
-                title: 'Scan Barcode',
-                subtitle: 'Scan a packaged food barcode',
-                animationDelay: 100.ms,
-                onTap: () {
-                  Navigator.of(context).push(
-                    AppPageRoute(builder: (_) => const BarcodeScanScreen()),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              LogOptionCard(
-                icon: Icons.camera_alt_outlined,
-                iconColor: colorScheme.secondary,
-                title: 'Take Photo',
-                subtitle: 'Recognize food from a photo',
-                animationDelay: 150.ms,
-                onTap: () {
-                  Navigator.of(context).push(
-                    AppPageRoute(builder: (_) => const PhotoRecognizeScreen()),
-                  );
-                },
-              ),
+              // const SizedBox(height: 16),
+              // LogOptionCard(
+              //   icon: Icons.qr_code_scanner,
+              //   iconColor: colorScheme.tertiary,
+              //   title: 'Scan Barcode',
+              //   subtitle: 'Scan a packaged food barcode',
+              //   animationDelay: 100.ms,
+              //   onTap: () {
+              //     Navigator.of(context).push(
+              //       AppPageRoute(builder: (_) => const BarcodeScanScreen()),
+              //     );
+              //   },
+              // ),
+              // const SizedBox(height: 16),
+              // LogOptionCard(
+              //   icon: Icons.camera_alt_outlined,
+              //   iconColor: colorScheme.secondary,
+              //   title: 'Take Photo',
+              //   subtitle: 'Recognize food from a photo',
+              //   animationDelay: 150.ms,
+              //   onTap: () {
+              //     Navigator.of(context).push(
+              //       AppPageRoute(builder: (_) => const PhotoRecognizeScreen()),
+              //     );
+              //   },
+              // ),
             ],
           ),
         ),

@@ -1,7 +1,7 @@
 name: meal_nudge
 description: "AI meal & calorie tracker"
 publish_to: 'none'
-version: 1.0.0+3
+version: 1.0.1+4
 
 environment:
   sdk: ^3.11.5
@@ -25,6 +25,11 @@ dependencies:
   cloud_firestore: ^6.6.0
   firebase_storage: ^13.4.3
   firebase_ai: ^3.13.1
+  permission_handler: ^12.0.3
+
+dependency_overrides:
+  firebase_core_platform_interface:
+    path: third_party/firebase_core_platform_interface
 
 dev_dependencies:
   flutter_test:
@@ -44,3 +49,5 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/icon.png

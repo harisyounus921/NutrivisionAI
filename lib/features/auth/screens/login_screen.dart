@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/navigation/post_auth_navigation.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../food/providers/meal_log_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/auth_provider.dart';
@@ -237,18 +238,9 @@ class _LoginIntroPanel extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              gradient: AppTheme.heroGradient,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.bolt_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
+          const AppLogo(
+            size: 54,
+            borderRadius: 16,
           ).animate().scale(duration: 450.ms, curve: Curves.easeOutBack),
           const SizedBox(width: 14),
           Expanded(

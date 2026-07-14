@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../food/models/meal_log.dart';
 import '../../food/providers/meal_log_provider.dart';
@@ -60,15 +61,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.heroGradient,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.bolt_rounded, color: Colors.white),
-                ),
+                const AppLogo(size: 46, borderRadius: 14),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

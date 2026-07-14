@@ -2,10 +2,10 @@ enum ActivitySource { manual, googleFit, appleHealth }
 
 extension ActivitySourceLabel on ActivitySource {
   String get label => switch (this) {
-        ActivitySource.manual => 'Manual',
-        ActivitySource.googleFit => 'Google Fit',
-        ActivitySource.appleHealth => 'Apple Health',
-      };
+    ActivitySource.manual => 'Manual',
+    ActivitySource.googleFit => 'Health Connect',
+    ActivitySource.appleHealth => 'Apple Health',
+  };
 }
 
 class ActivityLog {
@@ -26,20 +26,20 @@ class ActivityLog {
   final ActivitySource source;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'activityName': activityName,
-        'caloriesBurned': caloriesBurned,
-        'steps': steps,
-        'loggedAt': loggedAt.toIso8601String(),
-        'source': source.name,
-      };
+    'id': id,
+    'activityName': activityName,
+    'caloriesBurned': caloriesBurned,
+    'steps': steps,
+    'loggedAt': loggedAt.toIso8601String(),
+    'source': source.name,
+  };
 
   factory ActivityLog.fromJson(Map<String, dynamic> json) => ActivityLog(
-        id: json['id'] as String,
-        activityName: json['activityName'] as String,
-        caloriesBurned: (json['caloriesBurned'] as num).toDouble(),
-        steps: json['steps'] as int,
-        loggedAt: DateTime.parse(json['loggedAt'] as String),
-        source: ActivitySource.values.byName(json['source'] as String),
-      );
+    id: json['id'] as String,
+    activityName: json['activityName'] as String,
+    caloriesBurned: (json['caloriesBurned'] as num).toDouble(),
+    steps: json['steps'] as int,
+    loggedAt: DateTime.parse(json['loggedAt'] as String),
+    source: ActivitySource.values.byName(json['source'] as String),
+  );
 }

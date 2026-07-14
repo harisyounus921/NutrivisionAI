@@ -25,6 +25,12 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   Timer? _debounce;
 
   @override
+  void initState() {
+    super.initState();
+    _results = _foodService.allFoods;
+  }
+
+  @override
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
@@ -41,14 +47,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     if (trimmed == _lastQuery) return;
     _lastQuery = trimmed;
 
-    if (trimmed.length < 2) {
-      setState(() {
-        _results = [];
-        _isLoading = false;
-      });
-      return;
-    }
-
     setState(() => _isLoading = true);
     try {
       final results = await _foodService.search(trimmed);
@@ -61,9 +59,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   void _selectFood(FoodItem food) {
-    Navigator.of(context).push(
-      AppPageRoute(builder: (_) => LogPortionScreen(foodItem: food)),
-    );
+    Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (_) => LogPortionScreen(foodItem: food)));
   }
 
   @override
@@ -81,7 +79,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                autofocus: true,
+                autofocus: false,
                 decoration: InputDecoration(
                   hintText: 'Search for a food...',
                   prefixIcon: const Icon(Icons.search),
@@ -98,9 +96,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 ),
               ),
             ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.06, end: 0),
-            Expanded(
-              child: _buildBody(colorScheme, textTheme),
-            ),
+            Expanded(child: _buildBody(colorScheme, textTheme)),
           ],
         ),
       ),
@@ -108,17 +104,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   Widget _buildBody(ColorScheme colorScheme, TextTheme textTheme) {
-    if (_lastQuery.length < 2) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.search, size: 48, color: colorScheme.primary.withValues(alpha: 0.4)),
-            const SizedBox(height: 12),
-            Text('Type at least 2 characters to search', style: textTheme.bodyMedium),
-          ],
-        ),
-      ).animate().fadeIn(duration: 300.ms);
+    if (_isLoading && _results.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (!_isLoading && _results.isEmpty) {
@@ -126,13 +113,19 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.search_off, size: 48, color: colorScheme.primary.withValues(alpha: 0.5)),
+            Icon(
+              Icons.search_off,
+              size: 48,
+              color: colorScheme.primary.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             Text('No foods found', style: textTheme.titleSmall),
             const SizedBox(height: 4),
             Text(
               'Try a different search term.',
-              style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -141,31 +134,67 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: _results.length,
+      itemCount: _results.length + 1,
       itemBuilder: (context, index) {
-        final food = _results[index];
+        if (index == 0) {
+          final browsing = _lastQuery.isEmpty;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Text(
+                  browsing ? 'All foods' : 'Search results',
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${_results.length} items',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(duration: 250.ms);
+        }
+
+        final food = _results[index - 1];
         return Card(
-          child: ListTile(
-            shape: const RoundedRectangleBorder(),
-            leading: CircleAvatar(
-              backgroundColor: colorScheme.primaryContainer,
-              child: Icon(Icons.restaurant, color: colorScheme.onPrimaryContainer),
-            ),
-            title: Text(
-              food.name,
-              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Text(food.servingDescription),
-            trailing: Text(
-              '${food.calories.toStringAsFixed(0)} kcal',
-              style: textTheme.titleSmall?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.w700,
+              child: ListTile(
+                shape: const RoundedRectangleBorder(),
+                leading: CircleAvatar(
+                  backgroundColor: colorScheme.primaryContainer,
+                  child: Icon(
+                    Icons.restaurant,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                title: Text(
+                  food.name,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(food.servingDescription),
+                trailing: Text(
+                  '${food.calories.toStringAsFixed(0)} kcal',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () => _selectFood(food),
               ),
-            ),
-            onTap: () => _selectFood(food),
-          ),
-        ).animate().fadeIn(delay: (index * 30).ms, duration: 250.ms).slideX(begin: 0.04, end: 0);
+            )
+            .animate()
+            .fadeIn(
+              delay: (((index - 1) > 12 ? 12 : index - 1) * 20).ms,
+              duration: 250.ms,
+            )
+            .slideX(begin: 0.04, end: 0);
       },
     );
   }

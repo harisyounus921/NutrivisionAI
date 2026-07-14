@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/navigation/app_page_route.dart';
 import '../../../core/navigation/post_auth_navigation.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../food/providers/meal_log_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../providers/auth_provider.dart';
@@ -100,19 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      width: 58,
-                      height: 58,
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.heroGradient,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.person_add_alt_1_rounded,
-                        size: 32,
-                        color: Colors.white,
-                      ),
-                    ).animate().scale(
+                    const AppLogo(size: 58, borderRadius: 16).animate().scale(
                       duration: 500.ms,
                       curve: Curves.elasticOut,
                     ),

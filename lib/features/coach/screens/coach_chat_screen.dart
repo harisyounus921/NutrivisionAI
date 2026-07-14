@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../food/providers/meal_log_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/chat_message.dart';
@@ -25,7 +26,9 @@ class _CoachChatScreenState extends State<CoachChatScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ChatProvider>().loadMessages().then((_) => _scrollToBottom());
+      context.read<ChatProvider>().loadMessages().then(
+        (_) => _scrollToBottom(),
+      );
     });
   }
 
@@ -74,12 +77,7 @@ class _CoachChatScreenState extends State<CoachChatScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: const BoxDecoration(gradient: AppTheme.heroGradient, shape: BoxShape.circle),
-              child: const Icon(Icons.eco_rounded, color: Colors.white, size: 18),
-            ),
+            const AppLogo(size: 32, borderRadius: 10),
             const SizedBox(width: 10),
             const Text('AI Coach'),
           ],
@@ -104,7 +102,8 @@ class _CoachChatScreenState extends State<CoachChatScreen> {
                       controller: _scrollController,
                       padding: const EdgeInsets.all(16),
                       itemCount: chatProvider.messages.length,
-                      itemBuilder: (context, index) => _ChatBubble(message: chatProvider.messages[index]),
+                      itemBuilder: (context, index) =>
+                          _ChatBubble(message: chatProvider.messages[index]),
                     ),
             ),
             if (chatProvider.isReplying)
@@ -131,7 +130,10 @@ class _CoachChatScreenState extends State<CoachChatScreen> {
                   IconButton.filled(
                     onPressed: chatProvider.isReplying ? null : _send,
                     icon: const Icon(Icons.send_rounded),
-                    style: IconButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -154,7 +156,9 @@ class _ChatBubble extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final bubble = Container(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.72,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         gradient: isUser ? AppTheme.heroGradient : null,
@@ -173,16 +177,14 @@ class _ChatBubble extends StatelessWidget {
     );
 
     final row = Row(
-      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isUser
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: isUser
           ? [Flexible(child: bubble)]
           : [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: colorScheme.primaryContainer,
-                child: Icon(Icons.eco_rounded, size: 16, color: colorScheme.onPrimaryContainer),
-              ),
+              const AppLogo(size: 32, borderRadius: 10),
               const SizedBox(width: 8),
               Flexible(child: bubble),
             ],
@@ -190,7 +192,10 @@ class _ChatBubble extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: row.animate().fadeIn(duration: 250.ms).slideX(begin: isUser ? 0.08 : -0.08, end: 0),
+      child: row
+          .animate()
+          .fadeIn(duration: 250.ms)
+          .slideX(begin: isUser ? 0.08 : -0.08, end: 0),
     );
   }
 }
@@ -220,15 +225,32 @@ class _TypingIndicator extends StatelessWidget {
           children: List.generate(3, (i) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(color: colorScheme.onSurfaceVariant, shape: BoxShape.circle),
-              )
-                  .animate(onPlay: (controller) => controller.repeat(), delay: (i * 150).ms)
-                  .scaleXY(begin: 0.6, end: 1.0, duration: 400.ms, curve: Curves.easeInOut)
-                  .then(delay: 200.ms)
-                  .scaleXY(begin: 1.0, end: 0.6, duration: 400.ms, curve: Curves.easeInOut),
+              child:
+                  Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: colorScheme.onSurfaceVariant,
+                          shape: BoxShape.circle,
+                        ),
+                      )
+                      .animate(
+                        onPlay: (controller) => controller.repeat(),
+                        delay: (i * 150).ms,
+                      )
+                      .scaleXY(
+                        begin: 0.6,
+                        end: 1.0,
+                        duration: 400.ms,
+                        curve: Curves.easeInOut,
+                      )
+                      .then(delay: 200.ms)
+                      .scaleXY(
+                        begin: 1.0,
+                        end: 0.6,
+                        duration: 400.ms,
+                        curve: Curves.easeInOut,
+                      ),
             );
           }),
         ),

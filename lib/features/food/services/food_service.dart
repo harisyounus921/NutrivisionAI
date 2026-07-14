@@ -11,26 +11,44 @@ import '../models/food_item.dart';
 import '../models/recognition_candidate.dart';
 
 class FoodService {
+  List<FoodItem> get allFoods => List.unmodifiable(foodDatabase);
+
   Future<List<FoodItem>> search(String query) async {
-    if (query.trim().length < 2) return [];
     final q = query.trim().toLowerCase();
-    final local = foodDatabase
-        .where((food) => food.name.toLowerCase().contains(q))
-        .toList();
+    if (q.isEmpty) return allFoods;
+
+    final local = foodDatabase.where((food) {
+      final searchable = '${food.name} ${food.servingDescription}'
+          .toLowerCase();
+      return searchable.contains(q);
+    }).toList();
+
+    if (q.length < 2) return local;
+
     try {
       final remote = await FirebaseCollections.foods
           .where('searchTerms', arrayContains: q)
           .limit(20)
           .get();
-      return [
+      return _dedupeFoods([
         ...local,
         ...remote.docs.map(
           (doc) => FoodItem.fromApiJson({...doc.data(), 'id': doc.id}),
         ),
-      ];
+      ]);
     } catch (_) {
       return local;
     }
+  }
+
+  List<FoodItem> _dedupeFoods(List<FoodItem> foods) {
+    final seen = <String>{};
+    final deduped = <FoodItem>[];
+    for (final food in foods) {
+      final key = food.name.trim().toLowerCase();
+      if (seen.add(key)) deduped.add(food);
+    }
+    return deduped;
   }
 
   Future<FoodItem?> lookupBarcode(String barcode) async {

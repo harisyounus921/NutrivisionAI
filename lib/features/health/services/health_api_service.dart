@@ -37,24 +37,43 @@ class HealthApiService {
     required double caloriesBurned,
     required int activeMinutes,
   }) async {
-    final dateStr =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    await FirebaseBackend.userCollection(
+    final dateStr = _dateKey(date);
+    final doc = FirebaseBackend.userCollection(
       FirebaseCollections.healthSummariesPath,
-    ).doc(dateStr).set({
+    ).doc(dateStr);
+    final existing = (await doc.get()).data() ?? <String, dynamic>{};
+
+    final manualSteps = _existingManualSteps(existing);
+    final manualCalories = _existingManualCalories(existing);
+    final manualActiveMinutes = _existingManualActiveMinutes(existing);
+    final source = Platform.isIOS ? 'apple_health' : 'health_connect';
+
+    await doc.set({
       'date': dateStr,
-      'steps': steps,
-      'caloriesBurned': caloriesBurned,
-      'activeMinutes': activeMinutes,
-      'source': Platform.isIOS ? 'apple_health' : 'google_fit',
+      'manualSteps': manualSteps,
+      'manualCaloriesBurned': manualCalories,
+      'manualActiveMinutes': manualActiveMinutes,
+      'deviceSteps': steps,
+      'deviceCaloriesBurned': caloriesBurned,
+      'deviceActiveMinutes': activeMinutes,
+      'steps': manualSteps + steps,
+      'caloriesBurned': manualCalories + caloriesBurned,
+      'activeMinutes': manualActiveMinutes + activeMinutes,
+      'source': _sourceFor(
+        manualSteps: manualSteps,
+        manualCalories: manualCalories,
+        deviceSteps: steps,
+        deviceCalories: caloriesBurned,
+        deviceSource: source,
+      ),
+      'deviceSource': source,
       'updatedAt': DateTime.now().toIso8601String(),
     }, SetOptions(merge: true));
   }
 
   Future<List<HealthSummaryDay>> getSummary({int days = 7}) async {
     final from = DateTime.now().subtract(Duration(days: days - 1));
-    final fromStr =
-        '${from.year}-${from.month.toString().padLeft(2, '0')}-${from.day.toString().padLeft(2, '0')}';
+    final fromStr = _dateKey(from);
 
     final snapshot =
         await FirebaseBackend.userCollection(
@@ -66,5 +85,46 @@ class HealthApiService {
     return snapshot.docs
         .map((doc) => HealthSummaryDay.fromJson(doc.data()))
         .toList();
+  }
+
+  String _dateKey(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  int _existingManualSteps(Map<String, dynamic> data) {
+    final manual = data['manualSteps'] as num?;
+    if (manual != null) return manual.toInt();
+    return data['source'] == 'manual'
+        ? (data['steps'] as num? ?? 0).toInt()
+        : 0;
+  }
+
+  double _existingManualCalories(Map<String, dynamic> data) {
+    final manual = data['manualCaloriesBurned'] as num?;
+    if (manual != null) return manual.toDouble();
+    return data['source'] == 'manual'
+        ? (data['caloriesBurned'] as num? ?? 0).toDouble()
+        : 0;
+  }
+
+  int _existingManualActiveMinutes(Map<String, dynamic> data) {
+    final manual = data['manualActiveMinutes'] as num?;
+    if (manual != null) return manual.toInt();
+    return data['source'] == 'manual'
+        ? (data['activeMinutes'] as num? ?? 0).toInt()
+        : 0;
+  }
+
+  String _sourceFor({
+    required int manualSteps,
+    required double manualCalories,
+    required int deviceSteps,
+    required double deviceCalories,
+    required String deviceSource,
+  }) {
+    final hasManual = manualSteps > 0 || manualCalories > 0;
+    final hasDevice = deviceSteps > 0 || deviceCalories > 0;
+    if (hasManual && hasDevice) return 'combined';
+    if (hasDevice) return deviceSource;
+    return 'manual';
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:health/health.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DeviceHealthData {
@@ -28,6 +29,9 @@ class HealthDeviceService {
     HealthDataType.ACTIVE_ENERGY_BURNED,
   ];
 
+  static List<HealthDataAccess> get _permissions =>
+      _types.map((_) => HealthDataAccess.READ).toList();
+
   static Future<void> configure() async {
     if (Platform.isAndroid) {
       await _health.configure();
@@ -36,6 +40,12 @@ class HealthDeviceService {
   }
 
   static Future<bool> wasPermissionGranted() async {
+    if (Platform.isAndroid) {
+      final granted = await _hasRequiredAndroidPermissions();
+      await _savePermissionGranted(granted);
+      return granted;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_prefsKey) ?? false;
   }
@@ -65,11 +75,15 @@ class HealthDeviceService {
   }
 
   static Future<void> openHealthConnectSettings() async {
-    if (!Platform.isAndroid) return;
+    if (!Platform.isAndroid) {
+      await openAppSettings();
+      return;
+    }
     try {
       await _health.installHealthConnect();
     } catch (e) {
       _log('openHealthConnectSettings error: $e');
+      await openAppSettings();
     }
   }
 
@@ -79,23 +93,59 @@ class HealthDeviceService {
       await _health.installHealthConnect();
     } catch (e) {
       _log('installOrOpenHealthConnect error: $e');
+      await openAppSettings();
     }
+  }
+
+  static Future<bool> ensurePermissions() async {
+    final alreadyGranted = await wasPermissionGranted();
+    if (alreadyGranted) return true;
+    return requestPermissions();
   }
 
   static Future<bool> requestPermissions() async {
     try {
-      final permissions = _types.map((_) => HealthDataAccess.READ).toList();
+      if (Platform.isAndroid) {
+        final activityStatus = await Permission.activityRecognition.request();
+        if (!activityStatus.isGranted) {
+          _log('requestPermissions — activity recognition denied');
+          await _savePermissionGranted(false);
+          return false;
+        }
+      }
+
       final granted = await _health.requestAuthorization(
         _types,
-        permissions: permissions,
+        permissions: _permissions,
       );
-      _log('requestPermissions → $granted');
-      if (granted) {
-        await _savePermissionGranted(true);
+      _log('requestPermissions health → $granted');
+
+      if (Platform.isAndroid) {
+        final verified = granted && await _hasRequiredAndroidPermissions();
+        await _savePermissionGranted(verified);
+        return verified;
       }
+
+      await _savePermissionGranted(granted);
       return granted;
     } catch (e) {
       _log('requestPermissions error: $e');
+      await _savePermissionGranted(false);
+      return false;
+    }
+  }
+
+  static Future<bool> _hasRequiredAndroidPermissions() async {
+    try {
+      final activityGranted = await Permission.activityRecognition.isGranted;
+      if (!activityGranted) return false;
+
+      final healthGranted =
+          await _health.hasPermissions(_types, permissions: _permissions) ??
+          false;
+      return healthGranted;
+    } catch (e) {
+      _log('hasRequiredAndroidPermissions error: $e');
       return false;
     }
   }
